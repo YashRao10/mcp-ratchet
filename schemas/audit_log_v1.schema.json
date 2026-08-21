@@ -43,6 +43,10 @@
     "baseline_hash": { "type": ["string", "null"] },
     "current_hash": { "type": ["string", "null"] },
     "detail": { "type": ["string", "null"] },
+    "whitespace_only_change": {
+      "type": ["boolean", "null"],
+      "description": "drift_event only. True when a field-level change (description_changed/other_changed) is identical to the baseline after whitespace normalization — e.g. a description that only gained a trailing space. Informational only: the exact-hash ratchet still fires on this change regardless of this flag; it exists so a human or the dashboard can deprioritize a purely cosmetic diff without the drift event itself ever being suppressed."
+    },
 
     "error_type": { "type": ["string", "null"] },
     "error_message": { "type": ["string", "null"] }

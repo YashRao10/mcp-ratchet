@@ -4,7 +4,7 @@ unchanged server tomorrow. These tests exist to make that promise concrete,
 not just asserted in a docstring.
 """
 
-from scanner.fingerprint import fingerprint_tools, hash_tool
+from scanner.fingerprint import fingerprint_tools, hash_tool, normalize_whitespace
 
 
 def _tool(name="get_weather", description="Get the weather.", **extra):
@@ -49,6 +49,37 @@ def test_whitespace_only_change_still_changes_hash():
     a = hash_tool(_tool(description="Get the weather."))
     b = hash_tool(_tool(description="Get the weather. "))
     assert a != b
+
+
+def test_normalize_whitespace_collapses_runs_and_strips_strings():
+    assert normalize_whitespace("Get   the  weather.  ") == "Get the weather."
+    assert normalize_whitespace("Get the weather.") == "Get the weather."
+
+
+def test_normalize_whitespace_recurses_into_nested_structures():
+    value = {
+        "description": "  Get the   weather.  ",
+        "input_schema": {"properties": {"city": {"description": "A  city\nname."}}},
+        "tags": [" a ", "b  "],
+    }
+    normalized = normalize_whitespace(value)
+    assert normalized["description"] == "Get the weather."
+    assert normalized["input_schema"]["properties"]["city"]["description"] == "A city name."
+    assert normalized["tags"] == ["a", "b"]
+
+
+def test_normalize_whitespace_never_makes_a_real_content_change_disappear():
+    """The point of drift.py's whitespace_only_change flag depends on this:
+    normalization must not accidentally erase an actual wording change."""
+    a = normalize_whitespace("Get the weather.")
+    b = normalize_whitespace("Get the weather for a city.")
+    assert a != b
+
+
+def test_normalize_whitespace_leaves_non_string_values_alone():
+    assert normalize_whitespace(True) is True
+    assert normalize_whitespace(None) is None
+    assert normalize_whitespace(42) == 42
 
 
 def test_schema_change_changes_hash():

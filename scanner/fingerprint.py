@@ -81,6 +81,25 @@ def _stable_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
+def normalize_whitespace(value: Any) -> Any:
+    """Recursively collapse whitespace runs and strip string values, for
+    comparison purposes only — never used to compute the actual fingerprint
+    hash. A whitespace-only edit to a tool's description still changes
+    whole_server_hash and still trips drift detection; that's a deliberate
+    trade-off (see module docstring). This helper exists so drift.py can
+    additionally label a hash-changing edit as whitespace-only, giving a
+    human (or the dashboard) a way to deprioritize a purely cosmetic diff
+    without the underlying ratchet ever missing it.
+    """
+    if isinstance(value, str):
+        return " ".join(value.split())
+    if isinstance(value, dict):
+        return {k: normalize_whitespace(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [normalize_whitespace(v) for v in value]
+    return value
+
+
 def hash_tool(tool: Any) -> str:
     """SHA-256 of one tool's canonical shape, as a hex digest."""
     canonical = _tool_to_canonical_dict(tool)

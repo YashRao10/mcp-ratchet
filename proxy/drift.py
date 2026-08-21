@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from scanner.fingerprint import ServerFingerprint, fingerprint_tools
+from scanner.fingerprint import ServerFingerprint, fingerprint_tools, normalize_whitespace
 
 DRIFT_TOOL_ADDED = "tool_added"
 DRIFT_TOOL_REMOVED = "tool_removed"
@@ -31,6 +31,14 @@ class DriftEvent:
     baseline_hash: str | None
     current_hash: str | None
     detail: str
+    # True only for a field-level change whose baseline and live values are
+    # identical after whitespace normalization (see
+    # scanner.fingerprint.normalize_whitespace) — e.g. a description that
+    # only gained a trailing space. Always False for tool_added/tool_removed
+    # and for any change where normalization doesn't erase the difference.
+    # Purely informational: this flag never suppresses the event or changes
+    # whether it fires — the exact-hash ratchet still catches it regardless.
+    whitespace_only_change: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -40,6 +48,7 @@ class DriftEvent:
             "baseline_hash": self.baseline_hash,
             "current_hash": self.current_hash,
             "detail": self.detail,
+            "whitespace_only_change": self.whitespace_only_change,
         }
 
 
@@ -121,6 +130,9 @@ def diff_against_baseline(
             continue
 
         for field_name in changed_fields:
+            baseline_value = baseline_canonical.get(field_name)
+            live_value = live_canonical.get(field_name)
+            whitespace_only = normalize_whitespace(baseline_value) == normalize_whitespace(live_value)
             events.append(
                 DriftEvent(
                     drift_type=_classify_field_change(field_name),
@@ -129,8 +141,10 @@ def diff_against_baseline(
                     current_hash=current_hash,
                     detail=(
                         f"Field '{field_name}' changed from "
-                        f"{baseline_canonical.get(field_name)!r} to {live_canonical.get(field_name)!r}."
+                        f"{baseline_value!r} to {live_value!r}."
+                        + (" (whitespace-only)" if whitespace_only else "")
                     ),
+                    whitespace_only_change=whitespace_only,
                 )
             )
 

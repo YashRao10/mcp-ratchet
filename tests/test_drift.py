@@ -70,6 +70,8 @@ async def test_description_change_between_two_runs_is_flagged_as_drift(toy_serve
     assert len(weather_events) == 1, f"Expected exactly one drift event for get_weather, got: {events}"
     assert weather_events[0].drift_type == DRIFT_DESCRIPTION_CHANGED
     assert "location history" in weather_events[0].detail
+    # Real content changed, not just whitespace — must not be mislabeled.
+    assert weather_events[0].whitespace_only_change is False
 
     # And nothing else should have drifted — proves this isn't just
     # flagging every tool indiscriminately.
@@ -98,3 +100,33 @@ def delete_all_notes() -> str:
     added = [e for e in events if e.drift_type == DRIFT_TOOL_ADDED]
     assert len(added) == 1
     assert added[0].tool_name == "delete_all_notes"
+    # Not a field-level change (a whole new tool) — the flag never applies.
+    assert added[0].whitespace_only_change is False
+
+
+async def test_whitespace_only_edit_still_drifts_but_is_labeled_as_such(toy_server_copy):
+    """The exact-hash ratchet must still fire on a purely cosmetic edit —
+    that guarantee is non-negotiable (see README) — but the event should
+    now additionally be labeled whitespace_only_change=True so a human (or
+    the dashboard) can tell it apart from a real content change at a
+    glance, without the underlying detection ever being weakened.
+    """
+    baseline_fp, _ = await _connect_and_fingerprint(toy_server_copy, "toy-drift-test")
+
+    original_text = toy_server_copy.read_text(encoding="utf-8")
+    edited_text = original_text.replace(
+        '"""Get the current weather for a city. Read-only, no side effects."""',
+        '"""Get   the current  weather for a city.  Read-only, no side effects.  """',
+    )
+    assert edited_text != original_text, "The replace() didn't match — fixture text may have changed."
+    toy_server_copy.write_text(edited_text, encoding="utf-8")
+
+    _, live_tools_after_edit = await _connect_and_fingerprint(toy_server_copy, "toy-drift-test")
+    _, events = diff_against_baseline(live_tools_after_edit, baseline_fp)
+
+    weather_events = [e for e in events if e.tool_name == "get_weather"]
+    assert len(weather_events) == 1, f"Expected exactly one drift event for get_weather, got: {events}"
+    # Still a real drift event — the hash still changed, the ratchet still fired.
+    assert weather_events[0].drift_type == DRIFT_DESCRIPTION_CHANGED
+    # But correctly labeled as whitespace-only, unlike the real-content-change test above.
+    assert weather_events[0].whitespace_only_change is True
