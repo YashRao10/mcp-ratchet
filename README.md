@@ -56,8 +56,12 @@ places, and they carry different weight:
 - No Docker-sandboxed dynamic execution to observe real runtime behavior,
   unlike Snyk's.
 - No certification or trust-tier scoring, unlike mpak.dev.
-- No cross-server or registry-wide scanning — one target per run, by
-  design, not yet a limitation to fix.
+- `scanner/scan_batch.py` scans a list of your own already-known targets
+  in one run (`python -m scanner.scan_batch --config targets.json`),
+  writing each target's usual per-target report plus one aggregate batch
+  summary. This is NOT registry-wide scanning — it never discovers targets
+  on its own, only scans the ones you already listed. One failing target
+  doesn't abort the rest of the batch.
 - Tamper-evidence on the audit log is hash-chained (`proxy/audit_log.py`'s
   `verify_chain`, `python -m proxy.verify_log <path>`), which catches a
   log edited, reordered, or truncated *after the fact*. It does NOT
@@ -100,6 +104,19 @@ python -m scanner.run_scan --slug my-server \
 # for the prompt-injection check rather than silently skipped.
 python -m scanner.run_scan --slug toy --skip-injection-check -- \
     python tests/fixtures/toy_server.py
+
+# Scan several of your own already-known targets in one run
+python -m scanner.scan_batch --config targets.json
+```
+
+`targets.json` for the batch command above:
+```json
+{
+  "targets": [
+    {"slug": "toy", "command": ["python", "tests/fixtures/toy_server.py"]},
+    {"slug": "my-remote", "url": "https://example.com/mcp", "bearer_token_env": "MY_TOKEN"}
+  ]
+}
 ```
 
 A scan writes a JSON + HTML report to `reports/` and a baseline fingerprint
@@ -151,6 +168,7 @@ scanner/            Layer 1 — static analyzer
                          secret_scan.py, dependency_cve.py
   report.py             Assembles + renders JSON/HTML
   run_scan.py            CLI entrypoint
+  scan_batch.py           CLI entrypoint: scan a list of your own targets in one run
 
 proxy/               Layer 2 — runtime proxy/monitor
   client_side.py        Persistent connection to the real downstream target

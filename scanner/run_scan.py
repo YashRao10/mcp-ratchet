@@ -128,6 +128,28 @@ async def run_scan(
     )
 
 
+def write_scan_outputs(result: ScanResult, slug: str) -> tuple[Path, Path, Path]:
+    """Write a scan's JSON report, HTML report, and (if connect_ok) baseline
+    fingerprint to their standard locations under REPO_ROOT. Shared between
+    this CLI and scanner/scan_batch.py so both write reports identically.
+    Returns (json_path, html_path, baseline_path) — baseline_path may not
+    exist on disk if the scan failed to connect (still returned for the
+    caller's convenience/logging).
+    """
+    json_path = REPO_ROOT / "reports" / f"{slug}-scan-{result.generated_at.replace(':', '-')}.json"
+    html_path = json_path.with_suffix(".html")
+    write_json(result, json_path)
+    write_html(result, html_path)
+
+    baseline_path = REPO_ROOT / "baselines" / f"{slug}.json"
+    if result.connect_ok and result.fingerprint is not None:
+        baseline_path.parent.mkdir(parents=True, exist_ok=True)
+        baseline_path.write_text(
+            __import__("json").dumps(result.fingerprint.to_dict(), indent=2), encoding="utf-8"
+        )
+    return json_path, html_path, baseline_path
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
 
@@ -153,16 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAILED to connect to target '{args.slug}': {result.connect_error}", file=sys.stderr)
         return 1
 
-    json_path = REPO_ROOT / "reports" / f"{args.slug}-scan-{result.generated_at.replace(':', '-')}.json"
-    html_path = json_path.with_suffix(".html")
-    write_json(result, json_path)
-    write_html(result, html_path)
-
-    baseline_path = REPO_ROOT / "baselines" / f"{args.slug}.json"
-    baseline_path.parent.mkdir(parents=True, exist_ok=True)
-    baseline_path.write_text(
-        __import__("json").dumps(result.fingerprint.to_dict(), indent=2), encoding="utf-8"
-    )
+    json_path, html_path, baseline_path = write_scan_outputs(result, args.slug)
 
     print(f"Scanned '{args.slug}' — {result.server_name or '(unnamed server)'}")
     print(f"  Tools found: {result.fingerprint.tool_count}")
