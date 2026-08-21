@@ -51,6 +51,9 @@ h1{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.01
 .stat-row dd{font-family:var(--mono); font-size:19px; font-weight:600; margin:2px 0 0; font-variant-numeric:tabular-nums;}
 .stat-row .v-warn{color:var(--critical);}
 
+.tier{margin-bottom:12px;}
+.tier-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin-bottom:6px;}
+.tier-hash .tier-label,.tier-hash .drift-log-label{color:var(--critical);}
 .chip-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
 .chip{font-family:var(--mono); font-size:11.5px; display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:5px; border:1px solid var(--border-strong); color:var(--ink-soft);}
 .chip-n{font-weight:600; color:var(--ink);}
@@ -82,13 +85,13 @@ footer a:hover{text-decoration:underline;}
       <h1>mcp-ratchet</h1>
       <span class="mark">v1</span>
     </div>
-    <div class="meta">generated 2026-08-21 07:53 UTC</div>
+    <div class="meta">generated 2026-08-21 22:30 UTC</div>
   </div>
   <p class="tagline">A security scanner and runtime drift monitor for MCP servers &mdash; every install-time scanner checks once; this one keeps watching.</p>
 
   <div class="stats">
-    <div class="stat"><div class="n">1</div><div class="l">Targets tracked</div></div>
-    <div class="stat clean"><div class="n">0</div><div class="l">Clean</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">Targets tracked</div></div>
+    <div class="stat clean"><div class="n">1</div><div class="l">Clean</div></div>
     <div class="stat flagged"><div class="n">1</div><div class="l">Findings present</div></div>
     <div class="stat drift"><div class="n">0</div><div class="l">Live drift detected</div></div>
     <div class="stat"><div class="n">0</div><div class="l">Calls audited</div></div>
@@ -96,6 +99,28 @@ footer a:hover{text-decoration:underline;}
 
   <div class="grid">
     
+    <article class="card">
+      <header class="card-head">
+        <div>
+          <div class="card-slug">personal-financial-analysis</div>
+          <div class="card-server">personal-financial-analysis</div>
+        </div>
+        <span class="pill pill-clean">clean</span>
+      </header>
+
+      <dl class="stat-row">
+        <div><dt>tools</dt><dd>5</dd></div>
+        <div><dt>calls</dt><dd>0</dd></div>
+        <div><dt>sessions</dt><dd>0</dd></div>
+        <div><dt>drift</dt><dd class="">0</dd></div>
+      </dl>
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+
+      <div class="card-foot">last scanned 2026-08-21T22:17:32.784938+00:00</div>
+
+      
+    </article>
     <article class="card">
       <header class="card-head">
         <div>
@@ -112,7 +137,7 @@ footer a:hover{text-decoration:underline;}
         <div><dt>drift</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span><span class="chip chip-flag"><span class="chip-n">1</span>perm. mismatch</span><span class="chip chip-flag"><span class="chip-n">1</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div>
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-flag"><span class="chip-n">1</span>perm. mismatch</span><span class="chip chip-flag"><span class="chip-n">1</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-21T07:35:38.752506+00:00</div>
 

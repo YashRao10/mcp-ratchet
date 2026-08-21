@@ -33,19 +33,36 @@ def _check_chip(label: str, count: int, kind: str) -> str:
     return f'<span class="chip {tone}"><span class="chip-n">{count}</span>{escape(label)}</span>'
 
 
+def _tier_group(tier_label: str, tier_class: str, chips: str) -> str:
+    """One trust-tier's chips under a small labeled header — see README's
+    "Read this before trusting a report": a finding's weight depends on
+    which of three genuinely different places it came from, and the
+    dashboard should make that grouping visible, not just list five chips
+    with no indication of which kind of check produced which count."""
+    return f'<div class="tier tier-{tier_class}"><div class="tier-label">{escape(tier_label)}</div><div class="chip-row">{chips}</div></div>'
+
+
 def _target_card(summary: TargetSummary) -> str:
     scan = summary.latest_scan or {}
     s = scan.get("summary", {})
     fp = scan.get("fingerprint") or {}
 
-    chips = "".join(
+    judgment_chips = "".join(
         [
             _check_chip("suspicious", s.get("suspicious_tool_count", 0), "injection"),
             _check_chip("needs review", s.get("needs_review_count", 0), "review"),
+        ]
+    )
+    deterministic_chips = "".join(
+        [
             _check_chip("perm. mismatch", s.get("mismatch_count", 0), "mismatch"),
             _check_chip("secrets", s.get("secret_count", 0), "secret"),
             _check_chip("dep. CVEs", s.get("dependency_finding_count", 0), "cve"),
         ]
+    )
+    tiers = (
+        _tier_group("Judgment · real Claude API call", "judgment", judgment_chips)
+        + _tier_group("Deterministic · scripted rules", "deterministic", deterministic_chips)
     )
 
     drift_rows = "".join(
@@ -55,8 +72,8 @@ def _target_card(summary: TargetSummary) -> str:
         for e in summary.recent_drift_events
     )
     drift_block = (
-        f'<div class="drift-log"><div class="drift-log-label">Recent drift events</div>'
-        f'<ul>{drift_rows}</ul></div>'
+        f'<div class="tier tier-hash"><div class="drift-log"><div class="drift-log-label">'
+        f'Pure hashing · fingerprint drift</div><ul>{drift_rows}</ul></div></div>'
         if drift_rows
         else ""
     )
@@ -82,7 +99,7 @@ def _target_card(summary: TargetSummary) -> str:
         <div><dt>drift</dt><dd class="{'v-warn' if summary.drift_event_count else ''}">{summary.drift_event_count}</dd></div>
       </dl>
 
-      <div class="chip-row">{chips}</div>
+      {tiers}
 
       <div class="card-foot">last scanned {scanned_at}</div>
 
@@ -158,6 +175,9 @@ h1{{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.0
 .stat-row dd{{font-family:var(--mono); font-size:19px; font-weight:600; margin:2px 0 0; font-variant-numeric:tabular-nums;}}
 .stat-row .v-warn{{color:var(--critical);}}
 
+.tier{{margin-bottom:12px;}}
+.tier-label{{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin-bottom:6px;}}
+.tier-hash .tier-label,.tier-hash .drift-log-label{{color:var(--critical);}}
 .chip-row{{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}}
 .chip{{font-family:var(--mono); font-size:11.5px; display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:5px; border:1px solid var(--border-strong); color:var(--ink-soft);}}
 .chip-n{{font-weight:600; color:var(--ink);}}
