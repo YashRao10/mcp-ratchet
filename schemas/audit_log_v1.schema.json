@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mcp-ratchet-audit-log/1",
+  "title": "mcp-ratchet audit log record",
+  "description": "One JSON object per line in logs/<target_slug>-<session_id>.jsonl. schema_version appears on every record (not just a file header) so logs stay safely concatenable across a future version bump.",
+  "type": "object",
+  "required": ["schema_version", "record_type", "timestamp", "session_id", "target_slug", "sequence"],
+  "properties": {
+    "schema_version": { "const": "mcp-ratchet-audit-log/1" },
+    "record_type": {
+      "enum": ["tool_call", "tools_list_snapshot", "drift_event", "session_start", "session_end", "error"]
+    },
+    "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601, UTC." },
+    "session_id": { "type": "string", "format": "uuid", "description": "One per proxy process lifetime." },
+    "target_slug": { "type": "string", "description": "Matches baselines/<slug>.json." },
+    "sequence": { "type": "integer", "minimum": 0, "description": "Monotonic counter within session_id." },
+
+    "tool_name": { "type": ["string", "null"] },
+    "args_shape_hash": {
+      "type": ["string", "null"],
+      "description": "SHA-256 of canonicalized argument keys+types, NOT values (privacy default)."
+    },
+    "args_raw": {
+      "type": ["object", "null"],
+      "description": "Only populated when the proxy is run with --log-raw-args (explicit opt-in)."
+    },
+    "result_status": { "enum": ["success", "error", "timeout", null] },
+    "result_shape_hash": { "type": ["string", "null"] },
+    "duration_ms": { "type": ["number", "null"] },
+    "anomaly_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "One call can trip multiple detectors at once."
+    },
+
+    "tool_count": { "type": ["integer", "null"] },
+    "whole_server_hash": { "type": ["string", "null"] },
+    "per_tool_hashes": { "type": ["object", "null"] },
+
+    "drift_type": {
+      "enum": ["tool_added", "tool_removed", "description_changed", "schema_changed", "annotations_changed", "other_changed", null]
+    },
+    "baseline_hash": { "type": ["string", "null"] },
+    "current_hash": { "type": ["string", "null"] },
+    "detail": { "type": ["string", "null"] },
+
+    "error_type": { "type": ["string", "null"] },
+    "error_message": { "type": ["string", "null"] }
+  }
+}

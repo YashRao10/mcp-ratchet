@@ -21,9 +21,9 @@ GitHub PR title. And there's no standardized audit-log format for MCP
 tool-call activity anywhere in the industry.
 
 mcp-ratchet is two things: a real static scanner (so it's useful on its
-own, day one), and — once Phase 2 ships — a runtime proxy that fingerprints
-a server's tool surface once and can only ever detect drift against that
-baseline going forward. A ratchet, not a snapshot.
+own, day one), and a runtime proxy that fingerprints a server's tool
+surface once and can only ever detect drift against that baseline going
+forward. A ratchet, not a snapshot.
 
 ## Read this before trusting a report
 
@@ -54,13 +54,18 @@ places, and they carry different weight:
 - No certification or trust-tier scoring, unlike mpak.dev.
 - No cross-server or registry-wide scanning — one target per run, by
   design, not yet a limitation to fix.
-- No tamper-evidence on the audit log itself, once Phase 2 ships — a
-  compromised proxy could in principle falsify its own log. Named here
-  deliberately even though solving it is out of scope for v1.
+- No tamper-evidence on the audit log — a compromised proxy could in
+  principle falsify its own log. Named here deliberately even though
+  solving it is out of scope for v1.
 - No semantic/whitespace-normalized diffing — see above.
 - The dependency-CVE check only looks at exact-pinned versions in a
   `requirements.txt`/`package.json` sitting next to a local target's
   launch script. No lockfile resolution, no transitive dependencies.
+- The proxy only monitors — it never blocks a call even when drift is
+  detected. Blocking/policy-enforcement mode is a plausible future
+  direction, not current behavior.
+- No dashboard yet (Phase 3) — reports are local JSON/HTML files and
+  `logs/*.jsonl`, nothing published.
 
 ## Quickstart
 
@@ -82,21 +87,50 @@ python -m scanner.run_scan --slug toy --skip-injection-check -- \
 ```
 
 A scan writes a JSON + HTML report to `reports/` and a baseline fingerprint
-to `baselines/<slug>.json` — the second is what Phase 2's drift detection
-will diff future scans against.
+to `baselines/<slug>.json` — the runtime proxy diffs every future
+connection against that baseline.
+
+### Runtime proxy
+
+Point Claude Code's or Cursor's MCP config at the proxy instead of the
+real server directly — it forwards every request/response transparently,
+and on every `tools/list` call, diffs the live result against the
+baseline written above and logs a `drift_event` for anything that
+changed (tool added/removed, description/schema/annotations changed).
+
+```bash
+# Run a scan first so a baseline exists:
+python -m scanner.run_scan --slug toy --skip-injection-check -- python tests/fixtures/toy_server.py
+
+# Then run the proxy in place of the real server:
+python -m proxy.run_proxy --target toy -- python tests/fixtures/toy_server.py
+```
+
+Every call is logged to `logs/<slug>-<session>.jsonl` per the schema in
+`schemas/audit_log_v1.schema.json` — tool-call arguments are hashed by
+default, not stored raw (`--log-raw-args` to opt in). The proxy never
+blocks a call, even when drift is detected — it's a monitor, not a
+policy-enforcement gate, in this version.
 
 ## Project layout
 
 ```
-scanner/            Layer 1 — static analyzer (this is what's built so far)
-  connect.py         MCP client: stdio or HTTP, enumerate a target's tools
-  fingerprint.py      Canonical per-tool + whole-server hashing
-  checks/              prompt_injection.py, permission_mismatch.py,
-                        secret_scan.py, dependency_cve.py
-  report.py            Assembles + renders JSON/HTML
-  run_scan.py           CLI entrypoint
+scanner/            Layer 1 — static analyzer
+  connect.py          MCP client: stdio or HTTP, enumerate a target's tools
+  fingerprint.py       Canonical per-tool + whole-server hashing
+  checks/               prompt_injection.py, permission_mismatch.py,
+                         secret_scan.py, dependency_cve.py
+  report.py             Assembles + renders JSON/HTML
+  run_scan.py            CLI entrypoint
 
-proxy/               Layer 2 — runtime proxy/monitor (not yet built)
+proxy/               Layer 2 — runtime proxy/monitor
+  client_side.py        Persistent connection to the real downstream target
+  server_side.py         Presents this proxy as an MCP server upstream
+  forward.py              Transparent request/response pass-through
+  drift.py                 Diffs live tools/list against the Phase 1 baseline
+  audit_log.py              Writes schemas/audit_log_v1.schema.json records
+  run_proxy.py               CLI entrypoint
+
 reporting/           Layer 3 — dashboard (not yet built)
 
 tests/
@@ -116,3 +150,12 @@ The integration suite (`tests/test_scan_integration.py`) spawns the real
 toy fixture over a real stdio MCP connection and asserts each planted
 problem is caught by its corresponding check — the fixture is a negative
 control too (clean tools must stay unflagged).
+
+`tests/test_drift.py` is the single most important test in the repo: it
+copies the toy fixture to a temp dir, takes a real baseline, edits the
+copy's live source (a description change, then separately a whole new
+tool), reconnects, and asserts the resulting drift is caught and correctly
+attributed — the actual proof that the "rug pull" premise this project is
+built on holds up against a real, live MCP connection, not a hand-built
+fixture. `tests/test_forward.py` proves the proxy's transparency
+requirement: its output is byte-identical to a direct connection's.
