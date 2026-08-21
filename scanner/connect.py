@@ -31,11 +31,36 @@ class TargetSpec:
 
     @classmethod
     def from_command_string(cls, command_string: str, cwd: str | None = None) -> "TargetSpec":
-        """Parse a shell-style launch string, e.g. 'python server.py --flag'."""
+        """Parse a shell-style launch string, e.g. 'python server.py --flag'.
+
+        Only correct when no individual argument contains whitespace —
+        shlex has no way to recover a boundary that quoting already lost.
+        Prefer from_argv when the argv list is already available (e.g. from
+        argparse's REMAINDER), which is every real call site in this repo;
+        this string-based constructor exists for the case where only a
+        single already-typed command string is available (e.g. read from a
+        config file's launch-command field).
+        """
         parts = shlex.split(command_string, posix=False)
         if not parts:
             raise ValueError("Empty launch command")
         return cls(command=parts[0], args=parts[1:], cwd=cwd)
+
+    @classmethod
+    def from_argv(cls, parts: list[str], cwd: str | None = None) -> "TargetSpec":
+        """Build a target directly from an already-tokenized argv list.
+
+        Use this instead of from_command_string whenever the caller already
+        has the command as separate argv elements (e.g. argparse's
+        `nargs=REMAINDER`, which the OS/shell already split correctly). A
+        join-then-reparse round trip through from_command_string silently
+        drops any whitespace inside a single argument — a real launch
+        command on Windows, e.g. `python "C:\\Users\\Yash Rao\\...\\server.py"`,
+        breaks that way because the path itself contains a space.
+        """
+        if not parts:
+            raise ValueError("Empty launch command")
+        return cls(command=parts[0], args=list(parts[1:]), cwd=cwd)
 
     def to_stdio_params(self) -> StdioServerParameters:
         return StdioServerParameters(

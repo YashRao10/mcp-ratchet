@@ -78,7 +78,10 @@ async def run(args: argparse.Namespace) -> None:
     downstream_target = (
         HttpTargetSpec(url=args.url, bearer_token=bearer_token)
         if args.url
-        else TargetSpec.from_command_string(" ".join(args.command), cwd=args.cwd)
+        # args.command is already a correctly-tokenized argv list — build
+        # directly from it rather than joining+reparsing, which drops
+        # whitespace inside any single argument (see scanner/connect.py).
+        else TargetSpec.from_argv(args.command, cwd=args.cwd)
     )
 
     baseline = load_baseline(args.target)

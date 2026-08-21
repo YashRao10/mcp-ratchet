@@ -1,0 +1,95 @@
+{
+  "fingerprint_schema_version": 1,
+  "target_slug": "personal-financial-analysis",
+  "generated_at": "2026-08-21T22:17:32.775283+00:00",
+  "tool_count": 5,
+  "whole_server_hash": "94102b730a693b7ebd5f93c8754b0fc816a3b093661481de83cd6fff14dae61f",
+  "per_tool_hashes": {
+    "query_warehouse": "12d3089f4ea4d0b819c04a90059bb6e954f116411c457d6a4a0d87bcc64c4985",
+    "get_regime_now": "5d151e9f207a8b49ee1bf05a6473bda8ab498f2176b2644618566965fa4bf7bb",
+    "run_factor_decomposition": "690fa8134c2b2bdc18ece255635abbd7cb6ca3e09356e44f8ed8376a6f1943fe",
+    "get_fred_nowcast": "670957898cd9ff02ab23af183f2d9bdfd80133edecb87e6843175c374ab7297b",
+    "run_causal_control": "13c38580bdd50c200fd886feeed85f55a19b28e6185d176f6169ee6ff80f1a96"
+  },
+  "per_tool_canonical": {
+    "query_warehouse": {
+      "description": "Runs a read-only SQL query against the personal Warehouse (DuckDB).\nTables available: mart_portfolio_vs_macro (portfolio checkpoints joined\nto that month's macro backdrop), mart_macro_indicators_monthly (Fed\nfunds, 10y/2y yields + spread, CPI, unemployment), mart_sector_monthly_returns\n(GICS sector ETF monthly returns), mart_portfolio_daily (portfolio value,\ndeposits, organic P&L per checkpoint). Only SELECT statements are\nallowed; anything else is rejected before it touches the database.",
+      "input_schema": {
+        "properties": {
+          "sql": {
+            "title": "Sql",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sql"
+        ],
+        "title": "query_warehouseArguments",
+        "type": "object"
+      },
+      "name": "query_warehouse"
+    },
+    "get_regime_now": {
+      "description": "Classifies the current macro regime (Fed funds trend, yield curve,\ninflation, unemployment) from live FRED data using the rule-based\n6-regime classifier, and reports which GICS sectors have historically\nperformed best/worst during months in that same regime. Requires\nFRED_API_KEY to be set in this server's environment.",
+      "input_schema": {
+        "properties": {},
+        "title": "get_regime_nowArguments",
+        "type": "object"
+      },
+      "name": "get_regime_now"
+    },
+    "run_factor_decomposition": {
+      "description": "Decomposes a held ticker's recent (~400 calendar day) return into\nmarket, sector, and rate-factor betas plus an idiosyncratic residual,\nvia a 3-factor orthogonalized OLS fit. `ticker` must be one of the\nholdings tracked in positions.json (broad-market/sector ETFs held\ndirectly are excluded \u2014 decomposing them against themselves is\ncircular). Check r_squared before trusting the split: a low value means\nthe three factors barely explain this name's moves.",
+      "input_schema": {
+        "properties": {
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker"
+        ],
+        "title": "run_factor_decompositionArguments",
+        "type": "object"
+      },
+      "name": "run_factor_decomposition"
+    },
+    "get_fred_nowcast": {
+      "description": "Runs the GDP bridge-equation nowcast \u2014 plain OLS on 5 leading FRED\nindicators (industrial production, retail sales, initial claims,\npayrolls, housing starts), walk-forward backtested against actual GDP\nprints \u2014 and returns the current quarter's nowcast value plus backtest\naccuracy vs. a naive baseline. Requires FRED_API_KEY.",
+      "input_schema": {
+        "properties": {},
+        "title": "get_fred_nowcastArguments",
+        "type": "object"
+      },
+      "name": "get_fred_nowcast"
+    },
+    "run_causal_control": {
+      "description": "Estimates the causal effect of the June 2026 Fed hawkish pivot\n(2026-06-17) on a GICS sector ETF's price using synthetic control, with\na placebo test across all 11 sectors as a significance check. `treated`\nis the sector ticker to test (default XLK). `fit_end` (YYYY-MM-DD), if\ngiven and earlier than the treatment date, fits the control weights on\nonly that earlier window to test whether the post-treatment gap was\nalready emerging beforehand \u2014 otherwise this is an ordinary pre/post\nsplit at the treatment date. Always check fit_quality_warning before\ntrusting the reported gap.",
+      "input_schema": {
+        "properties": {
+          "fit_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fit End"
+          },
+          "treated": {
+            "default": "XLK",
+            "title": "Treated",
+            "type": "string"
+          }
+        },
+        "title": "run_causal_controlArguments",
+        "type": "object"
+      },
+      "name": "run_causal_control"
+    }
+  }
+}

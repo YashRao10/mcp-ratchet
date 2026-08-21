@@ -70,8 +70,13 @@ async def run_scan(
         command_string = url
         target = HttpTargetSpec(url=url, bearer_token=bearer_token)
     else:
+        # command is already a correctly-tokenized argv list (from argparse's
+        # REMAINDER) — build the target straight from it rather than joining
+        # to a string and reparsing, which drops whitespace inside any single
+        # argument (e.g. a Windows path containing a space). command_string
+        # here is display-only (ScanResult.target_command), never reparsed.
         command_string = " ".join(command)
-        target = TargetSpec.from_command_string(command_string, cwd=cwd)
+        target = TargetSpec.from_argv(command, cwd=cwd)
     connect_result = await enumerate_target(target)
 
     if not connect_result.ok:
