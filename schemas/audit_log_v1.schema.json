@@ -14,6 +14,14 @@
     "session_id": { "type": "string", "format": "uuid", "description": "One per proxy process lifetime." },
     "target_slug": { "type": "string", "description": "Matches baselines/<slug>.json." },
     "sequence": { "type": "integer", "minimum": 0, "description": "Monotonic counter within session_id." },
+    "prev_record_hash": {
+      "type": "string",
+      "description": "Hex SHA-256 of the previous record in this same file (genesis value '0'*64 for the first record). Forms a hash chain across the whole file for tamper-evidence — see proxy/audit_log.py's verify_chain(). Present on every record written by AuditLogWriter; a record missing this field was not written by a chain-aware writer."
+    },
+    "record_hash": {
+      "type": "string",
+      "description": "Hex SHA-256 of (prev_record_hash + this record's own JSON, itself excluded). Recompute and compare via proxy.audit_log.verify_chain(path) to detect any past line being edited, reordered, or deleted."
+    },
 
     "tool_name": { "type": ["string", "null"] },
     "args_shape_hash": {

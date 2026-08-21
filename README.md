@@ -43,8 +43,12 @@ places, and they carry different weight:
   produces the same output.
 - **Pure hashing, zero semantic judgment** — the fingerprint that backs
   drift detection. It hashes a tool's declared shape exactly.
-  **A whitespace-only edit to a description still changes the hash.**
-  That's a deliberate trade-off (see below), not a bug.
+  **A whitespace-only edit to a description still changes the hash, and
+  still produces a drift event.** That's a deliberate trade-off (see
+  below), not a bug. The resulting `DriftEvent` does carry a
+  `whitespace_only_change` flag so you can see at a glance that a given
+  event was purely cosmetic — but that flag is informational only; it
+  never suppresses or downgrades the event itself.
 
 ## What this does NOT do (not yet built)
 
@@ -54,10 +58,21 @@ places, and they carry different weight:
 - No certification or trust-tier scoring, unlike mpak.dev.
 - No cross-server or registry-wide scanning — one target per run, by
   design, not yet a limitation to fix.
-- No tamper-evidence on the audit log — a compromised proxy could in
-  principle falsify its own log. Named here deliberately even though
-  solving it is out of scope for v1.
-- No semantic/whitespace-normalized diffing — see above.
+- Tamper-evidence on the audit log is hash-chained (`proxy/audit_log.py`'s
+  `verify_chain`, `python -m proxy.verify_log <path>`), which catches a
+  log edited, reordered, or truncated *after the fact*. It does NOT
+  protect against a compromised proxy computing a consistent fake chain
+  from the start — that would need something outside this process's
+  control entirely (an external append-only store, a signing key the
+  proxy never has custody of). Named here deliberately, same as before;
+  only the first half of this limitation has been solved.
+- No semantic/whitespace-normalized diffing as a distinct diff mode —
+  every field-level drift event now carries a `whitespace_only_change`
+  flag (see above) so a cosmetic edit is labeled, but the exact-hash
+  ratchet still fires on it exactly as before. A mode that suppresses
+  those events outright is deliberately not offered — see "Read this
+  before trusting a report" above for why that guarantee isn't
+  negotiable.
 - The dependency-CVE check only looks at exact-pinned versions in a
   `requirements.txt`/`package.json` sitting next to a local target's
   launch script. No lockfile resolution, no transitive dependencies.
@@ -113,6 +128,19 @@ default, not stored raw (`--log-raw-args` to opt in). The proxy never
 blocks a call, even when drift is detected — it's a monitor, not a
 policy-enforcement gate, in this version.
 
+Every record in that file is hash-chained to the one before it, so
+editing, reordering, or truncating any past line breaks the chain for
+everything after it:
+
+```bash
+python -m proxy.verify_log logs/toy-20260821T221732Z.jsonl
+```
+
+Prints whether the chain is intact from genesis and, if not, the exact
+line where it broke. See `proxy/audit_log.py`'s module docstring for what
+this guarantees and what it explicitly doesn't (it can't catch a
+compromised proxy process faking a chain from the start).
+
 ## Project layout
 
 ```
@@ -129,7 +157,9 @@ proxy/               Layer 2 — runtime proxy/monitor
   server_side.py         Presents this proxy as an MCP server upstream
   forward.py              Transparent request/response pass-through
   drift.py                 Diffs live tools/list against the Phase 1 baseline
-  audit_log.py              Writes schemas/audit_log_v1.schema.json records
+  audit_log.py              Writes schemas/audit_log_v1.schema.json records,
+                              hash-chained for tamper-evidence
+  verify_log.py               CLI entrypoint: verify a log's hash chain
   run_proxy.py               CLI entrypoint
 
 reporting/           Layer 3 — dashboard

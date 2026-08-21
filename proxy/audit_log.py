@@ -9,6 +9,20 @@ default — the point of args_shape_hash is that a real incident review can
 still see "this tool was called with an argument shaped like X" without
 this log itself becoming a second copy of every credential/payload that
 ever flowed through the proxy.
+
+Hash-chained for tamper-evidence: every record's record_hash commits to
+the previous record's record_hash plus this record's own content, so
+editing or deleting any past line breaks the chain for every line after
+it — detectable by verify_chain() below without needing anything but the
+log file itself. This is explicitly bounded, matching the README's
+existing caveat: it detects a log file edited *after the fact* by
+something other than this writer (an external tamperer, a bug, a partial
+disk write). It does NOT protect against a compromised proxy process
+computing a consistent fake chain from the start — that would require
+something outside this file's control, like an external append-only
+store or a signing key the proxy process itself never has custody of.
+Named as a real limitation, same as the README already does, not solved
+here.
 """
 
 from __future__ import annotations
@@ -22,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "mcp-ratchet-audit-log/1"
+GENESIS_HASH = "0" * 64
 
 
 def _stable_json(value: Any) -> str:
@@ -38,12 +53,85 @@ def hash_shape(value: Any) -> str:
     return hashlib.sha256(_stable_json(shape).encode("utf-8")).hexdigest()
 
 
+@dataclass
+class ChainVerificationResult:
+    ok: bool
+    records_checked: int
+    # 0-based line index of the first record whose hash doesn't match, or
+    # that's missing chain fields entirely — None when ok is True.
+    broken_at_line: int | None
+    detail: str
+
+
+def verify_chain(path: Path) -> ChainVerificationResult:
+    """Recompute the hash chain over an existing log file from genesis and
+    confirm every record_hash matches. Detects any edit, reordering, or
+    deletion of a past line (each breaks the chain for every line after
+    it) and a truncated file missing its trailing session_end record —
+    but see the module docstring for what this does NOT protect against.
+    """
+    prev_hash = GENESIS_HASH
+    lines = path.read_text(encoding="utf-8").splitlines()
+
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            return ChainVerificationResult(
+                ok=False, records_checked=i, broken_at_line=i,
+                detail=f"Line {i} is not valid JSON: {exc}",
+            )
+
+        claimed_hash = record.get("record_hash")
+        claimed_prev = record.get("prev_record_hash")
+        if claimed_hash is None or claimed_prev is None:
+            return ChainVerificationResult(
+                ok=False, records_checked=i, broken_at_line=i,
+                detail=f"Line {i} is missing prev_record_hash/record_hash — not written by this chain-aware writer.",
+            )
+        if claimed_prev != prev_hash:
+            return ChainVerificationResult(
+                ok=False, records_checked=i, broken_at_line=i,
+                detail=(
+                    f"Line {i}'s prev_record_hash ({claimed_prev[:12]}...) doesn't match the "
+                    f"previous record's actual hash ({prev_hash[:12]}...) — a line was edited, "
+                    "reordered, or deleted somewhere before this point."
+                ),
+            )
+
+        record_without_hash = {k: v for k, v in record.items() if k != "record_hash"}
+        recomputed = hashlib.sha256(
+            (prev_hash + _stable_json(record_without_hash)).encode("utf-8")
+        ).hexdigest()
+        if recomputed != claimed_hash:
+            return ChainVerificationResult(
+                ok=False, records_checked=i, broken_at_line=i,
+                detail=f"Line {i}'s content doesn't match its own claimed record_hash — this line was edited in place.",
+            )
+
+        prev_hash = claimed_hash
+
+    return ChainVerificationResult(
+        ok=True, records_checked=len(lines), broken_at_line=None,
+        detail=f"All {len(lines)} record(s) verified — chain intact from genesis.",
+    )
+
+
 class AuditLogWriter:
     def __init__(self, logs_dir: Path, target_slug: str, log_raw_args: bool = False):
         self.session_id = str(uuid.uuid4())
         self.target_slug = target_slug
         self.log_raw_args = log_raw_args
         self._sequence = 0
+        # Chain state is per-writer (i.e. per file, since one writer owns
+        # one file for its whole session) — genesis for a brand new file.
+        # This writer only ever appends to a file it just created (the
+        # session timestamp in the filename makes collisions practically
+        # impossible), so there's no case where _prev_hash needs to be
+        # recovered from an existing file's tail.
+        self._prev_hash = GENESIS_HASH
 
         logs_dir.mkdir(parents=True, exist_ok=True)
         session_ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -60,6 +148,12 @@ class AuditLogWriter:
             **record,
         }
         self._sequence += 1
+        record["prev_record_hash"] = self._prev_hash
+        record_hash = hashlib.sha256(
+            (self._prev_hash + _stable_json(record)).encode("utf-8")
+        ).hexdigest()
+        record["record_hash"] = record_hash
+        self._prev_hash = record_hash
         self._fh.write(_stable_json(record) + "\n")
         self._fh.flush()
 
