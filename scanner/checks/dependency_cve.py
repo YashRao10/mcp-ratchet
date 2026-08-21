@@ -76,11 +76,72 @@ def parse_package_json(path: Path) -> list[tuple[str, str]]:
     return pinned
 
 
+def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
+    """Pulls every resolved package (direct AND transitive) out of an npm
+    package-lock.json — this is the one lockfile-resolution gap the README
+    names explicitly ("no lockfile resolution, no transitive dependencies"),
+    closed for the npm ecosystem specifically.
+
+    Supports lockfile v2/v3 ("packages" map, keyed by "node_modules/<name>"
+    for top-level and nested paths for transitive deps — the version is
+    already fully resolved, unlike package.json's "^"/"~" ranges) and falls
+    back to the older v1 "dependencies" tree (which nests transitive deps
+    under each direct dependency's own "dependencies" key) for older
+    lockfiles. Either way, every entry here has a single concrete version —
+    that's what makes a lockfile checkable where a bare manifest isn't.
+    """
+    if not path.exists():
+        return []
+    import json
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+    resolved: dict[str, str] = {}
+
+    packages = data.get("packages")
+    if isinstance(packages, dict):
+        # v2/v3: keys are "" (the project itself), "node_modules/foo",
+        # "node_modules/foo/node_modules/bar" (nested/transitive), etc.
+        for key, entry in packages.items():
+            if not key or not isinstance(entry, dict):
+                continue
+            name = key.rsplit("node_modules/", 1)[-1]
+            version = entry.get("version")
+            if name and version:
+                resolved[name] = version
+    else:
+        # v1 fallback: a recursive "dependencies" tree.
+        def _walk(deps: dict) -> None:
+            for name, entry in (deps or {}).items():
+                if not isinstance(entry, dict):
+                    continue
+                version = entry.get("version")
+                if version:
+                    resolved[name] = version
+                _walk(entry.get("dependencies") or {})
+
+        _walk(data.get("dependencies") or {})
+
+    return list(resolved.items())
+
+
 def find_manifest(root: Path) -> tuple[str, Path] | None:
-    """Look one level for a requirements.txt or package.json near a
-    target's launch script. Returns (ecosystem, path) or None."""
+    """Look one level for a lockfile or manifest near a target's launch
+    script. Returns (ecosystem, path) or None.
+
+    A lockfile is preferred over its corresponding manifest when both
+    exist: package-lock.json gives every transitive dependency a single
+    resolved version, where package.json alone only has direct
+    dependencies and often a version *range* the CVE check can't act on
+    (see check_manifest_dir's ecosystem dispatch below for how the two
+    parse differently).
+    """
     for candidate, ecosystem in (
         (root / "requirements.txt", "PyPI"),
+        (root / "package-lock.json", "npm-lock"),
         (root / "package.json", "npm"),
     ):
         if candidate.exists():
@@ -116,20 +177,30 @@ def check_manifest_dir(root: Path) -> list[DependencyFinding]:
         return []
 
     ecosystem, path = manifest
-    pinned = parse_requirements_txt(path) if ecosystem == "PyPI" else parse_package_json(path)
+    if ecosystem == "PyPI":
+        pinned = parse_requirements_txt(path)
+    elif ecosystem == "npm-lock":
+        pinned = parse_package_lock_json(path)
+    else:
+        pinned = parse_package_json(path)
     if not pinned:
         return []
+
+    # "npm-lock" is this check's own tag for "came from a lockfile, so
+    # every version here is fully resolved, including transitive deps" —
+    # OSV.dev itself only knows the real ecosystem name.
+    osv_ecosystem = "npm" if ecosystem == "npm-lock" else ecosystem
 
     findings: list[DependencyFinding] = []
     with httpx.Client() as client:
         for name, version in pinned:
-            vuln_ids = _query_osv(name, version, ecosystem, client)
+            vuln_ids = _query_osv(name, version, osv_ecosystem, client)
             if vuln_ids:
                 findings.append(
                     DependencyFinding(
                         package_name=name,
                         version=version,
-                        ecosystem=ecosystem,
+                        ecosystem=osv_ecosystem,
                         vulnerability_ids=vuln_ids,
                     )
                 )
