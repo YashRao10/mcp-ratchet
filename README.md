@@ -64,8 +64,9 @@ places, and they carry different weight:
 - The proxy only monitors — it never blocks a call even when drift is
   detected. Blocking/policy-enforcement mode is a plausible future
   direction, not current behavior.
-- No dashboard yet (Phase 3) — reports are local JSON/HTML files and
-  `logs/*.jsonl`, nothing published.
+- The dashboard aggregates whatever's on disk in `reports/`/`logs/` at
+  build time — it has no live/push updates, it's a static snapshot
+  regenerated on every push to `main`.
 
 ## Quickstart
 
@@ -131,7 +132,10 @@ proxy/               Layer 2 — runtime proxy/monitor
   audit_log.py              Writes schemas/audit_log_v1.schema.json records
   run_proxy.py               CLI entrypoint
 
-reporting/           Layer 3 — dashboard (not yet built)
+reporting/           Layer 3 — dashboard
+  audit_summary.py       Aggregates reports/*.json + logs/*.jsonl per target
+  dashboard.py             Renders reports/dashboard.html (self-contained,
+                            no build step — this is what GitHub Pages serves)
 
 tests/
   fixtures/toy_server.py   A controllable MCP server with one planted
@@ -139,6 +143,18 @@ tests/
                             actually fires against a real MCP connection —
                             not just a hand-built dict.
 ```
+
+## Dashboard
+
+```bash
+python -m reporting.dashboard   # writes reports/dashboard.html
+```
+
+Deploys automatically to GitHub Pages on every push to `main`
+(`.github/workflows/deploy.yml`) — same pattern as `ai-compliance-crosswalk`.
+Every number on the page is real, computed from whatever's actually on disk
+in `reports/` and `logs/` at build time; there's no placeholder or demo
+data path.
 
 ## Tests
 
