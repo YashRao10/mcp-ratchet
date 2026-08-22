@@ -1,0 +1,15 @@
+{
+  "targets": [
+    {
+      "slug": "personal-financial-analysis",
+      "command": ["python", "C:\\Users\\Yash Rao\\Desktop\\finance-projects\\financial-analysis-mcp\\server.py"],
+      "skip_injection_check": true
+    },
+    {
+      "slug": "pact-mcp-server",
+      "command": ["python", "-m", "pact_mcp.server"],
+      "cwd": "C:\\Users\\Yash Rao\\Desktop\\PACT Work\\04-MCP-Integration\\pact-mcp-server",
+      "skip_injection_check": true
+    }
+  ]
+}

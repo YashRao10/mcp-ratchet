@@ -1,0 +1,31 @@
+{
+  "batch_schema_version": 1,
+  "generated_at": "2026-08-22T01:50:39.626026+00:00",
+  "target_count": 2,
+  "connected_count": 2,
+  "clean_count": 2,
+  "targets": [
+    {
+      "slug": "personal-financial-analysis",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 5,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    },
+    {
+      "slug": "pact-mcp-server",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 17,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    }
+  ]
+}
