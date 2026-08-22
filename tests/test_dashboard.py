@@ -93,3 +93,13 @@ def test_render_dashboard_produces_real_numbers_not_placeholders(tmp_path):
 def test_render_dashboard_empty_state_does_not_crash():
     html = render_dashboard([])
     assert "No targets scanned yet" in html
+
+
+def test_render_dashboard_card_links_to_target_detail_page(tmp_path):
+    reports_dir = tmp_path / "reports"
+    _write_scan(reports_dir, "toy", is_clean=True)
+
+    summaries = build_summaries(reports_dir, tmp_path / "logs")
+    html = render_dashboard(summaries)
+
+    assert 'href="target-toy.html"' in html

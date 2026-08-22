@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pact-mcp-server &middot; mcp-ratchet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0d; --surface:#14171a; --surface-2:#1b1f23; --border:#262b30; --border-strong:#353b41;
+  --ink:#eef1f0; --ink-soft:#9aa3a8; --ink-faint:#5f686d;
+  --brass:#c9974a; --steel:#4a9d9c; --warn:#d97757; --critical:#d1495b;
+  --head:"Barlow Condensed",sans-serif; --body:"Public Sans",system-ui,sans-serif; --mono:"JetBrains Mono",Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); margin:0; font-size:15px; line-height:1.55;}
+.wrap{max-width:960px; margin:0 auto; padding:48px 28px 90px;}
+a.back{font-family:var(--mono); font-size:12.5px; color:var(--brass); text-decoration:none;}
+a.back:hover{text-decoration:underline;}
+h1{font-family:var(--head); font-weight:700; font-size:36px; letter-spacing:0.01em; margin:14px 0 2px; text-transform:uppercase;}
+.server-name{color:var(--ink-faint); font-size:13px; margin-bottom:20px;}
+.command{font-family:var(--mono); font-size:12px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:10px 14px; margin-bottom:28px; word-break:break-all;}
+.meta-row{display:flex; gap:24px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-bottom:36px;}
+.meta-row b{color:var(--ink-soft);}
+h2{font-family:var(--head); font-size:18px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink); margin:36px 0 14px; padding-top:20px; border-top:1px solid var(--border);}
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{text-align:left; font-family:var(--head); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); padding:6px 10px; border-bottom:1px solid var(--border-strong);}
+td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--ink-soft);}
+.mono{font-family:var(--mono);}
+.hash{color:var(--ink-faint); font-size:11.5px;}
+.tool-desc{white-space:pre-wrap; max-width:520px;}
+.empty-cell{color:var(--ink-faint); font-family:var(--mono); font-size:13px; padding:10px 0;}
+.finding-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+.finding-list li{background:var(--surface); border:1px solid rgba(217,119,87,0.35); border-radius:6px; padding:10px 12px; font-size:12.5px; display:flex; flex-direction:column; gap:4px;}
+.finding-tool{color:var(--warn); font-weight:600;}
+.finding-field{color:var(--ink-soft);}
+.finding-field b{color:var(--ink-faint); font-weight:500;}
+footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
+</style>
+</head><body>
+<div class="wrap">
+  <a class="back" href="dashboard.html">&larr; back to dashboard</a>
+  <h1>pact-mcp-server</h1>
+  <div class="server-name">pact</div>
+  <div class="command">python -m pact_mcp.server</div>
+
+  <div class="meta-row">
+    <span><b>last scanned:</b> 2026-08-22T01:50:39.618423+00:00</span>
+    <span><b>tool count:</b> 17</span>
+    <span><b>calls audited:</b> 0</span>
+    <span><b>sessions:</b> 0</span>
+    <span><b>drift events:</b> 0</span>
+  </div>
+  <div class="meta-row">
+    <span><b>whole-server hash:</b> <span class="mono hash">e24f456d4e900ea213ba7decdcdf2c3f9f152b1c68fdc51ea9e40fc3a03bf337</span></span>
+  </div>
+
+  <h2>Tool inventory</h2>
+  <table>
+    <thead><tr><th>tool</th><th>description</th><th>hash</th></tr></thead>
+    <tbody><tr><td class="mono">create_problem_report</td><td class="tool-desc">Open a new Problem Report (e.g. a bug found during test authoring or review).
+
+severity: e.g. &quot;Critical&quot;, &quot;Major&quot;, &quot;Minor&quot;.</td><td class="mono hash">9bf92bcdc486</td></tr><tr><td class="mono">create_requirement</td><td class="tool-desc">Propose a new Requirement (e.g. an HLR or LLR) via the MCP import path.
+
+This creates a PROPOSAL, not a final record. Every requirement submitted
+through this tool is tagged status=&quot;proposed&quot; and provenance=&quot;mcp&quot; —
+hardcoded below, not caller-controlled, so a model can&#x27;t self-approve by
+passing a different status. Per the 2026-07-12 team meeting, MCP is a
+third way work enters PACT, alongside manual entry and smart import, each
+gated by the same downstream flow: a human pre-review, then PACT&#x27;s own
+formal peer review and compliance tracking before anything counts as
+accepted. No tool in this file can move a requirement out of &quot;proposed&quot; —
+that transition is a human action inside PACT&#x27;s own UI, the same
+restriction sign_review (below) already applies to review sign-off.
+
+level: e.g. &quot;System&quot;, &quot;High-Level&quot;, &quot;Low-Level&quot;.
+parent_id: the parent Requirement this one traces up to, if any.
+agent_name: which AI tool is submitting this (e.g. &quot;claude&quot;, &quot;codex&quot;,
+    &quot;copilot&quot;, &quot;gemini&quot;) — multiple AI tools will submit through this
+    same door, so provenance needs to record which one, not just &quot;mcp&quot;.</td><td class="mono hash">2bb4e05152be</td></tr><tr><td class="mono">create_review</td><td class="tool-desc">Create a new Review against a Checklist Template.
+
+review_type: e.g. &quot;Peer&quot;, &quot;Transition&quot;.</td><td class="mono hash">4b16ca347997</td></tr><tr><td class="mono">create_test_case</td><td class="tool-desc">Create a new Test Case, traced to a Requirement.</td><td class="mono hash">0e37e508fa51</td></tr><tr><td class="mono">get_problem_report</td><td class="tool-desc">Get one Problem Report by ID.</td><td class="mono hash">9dad505f7f41</td></tr><tr><td class="mono">get_project</td><td class="tool-desc">Get details for one PACT Project by ID.</td><td class="mono hash">36a7af9d1046</td></tr><tr><td class="mono">get_requirement</td><td class="tool-desc">Get one Requirement by ID.</td><td class="mono hash">997fe0d11fed</td></tr><tr><td class="mono">get_review_status</td><td class="tool-desc">Get review status across all Hardware/Software Items in a Project.</td><td class="mono hash">ad7020c2ad59</td></tr><tr><td class="mono">get_traceability_matrix</td><td class="tool-desc">Get the full Requirements Traceability Matrix (System-&gt;HLR-&gt;LLR-&gt;Code-&gt;Test) for an Item.</td><td class="mono hash">e97fca69f343</td></tr><tr><td class="mono">list_problem_reports</td><td class="tool-desc">List Problem Reports for an Item.</td><td class="mono hash">b7f4c9294b66</td></tr><tr><td class="mono">list_projects</td><td class="tool-desc">List all PACT Projects visible to the configured user.</td><td class="mono hash">1670b261dfb7</td></tr><tr><td class="mono">list_requirements</td><td class="tool-desc">List Requirements (System/HLR/LLR) for a Software or Hardware Item.</td><td class="mono hash">8fda076bb698</td></tr><tr><td class="mono">list_reviews</td><td class="tool-desc">List Reviews (Peer/Transition) for an Item.</td><td class="mono hash">a9902fbda299</td></tr><tr><td class="mono">list_test_cases</td><td class="tool-desc">List Test Cases/Procedures for an Item.</td><td class="mono hash">348034e71290</td></tr><tr><td class="mono">sign_review</td><td class="tool-desc">Sign off on a Review as an Evaluator.
+
+NOTE: per the User Guide, this is an explicit human sign-in action tied
+to a signature file — treat this tool as recording a human&#x27;s decision,
+not as an AI-authorized signature. Only call this on a human&#x27;s behalf
+with their explicit go-ahead in the conversation.</td><td class="mono hash">0be99cbb4f58</td></tr><tr><td class="mono">update_problem_report</td><td class="tool-desc">Update a Problem Report&#x27;s status/root cause/corrective action as it moves
+through triage -&gt; fix -&gt; verification -&gt; close.</td><td class="mono hash">c354448f80c0</td></tr><tr><td class="mono">update_requirement</td><td class="tool-desc">Update title/description on an existing Requirement — e.g. refining a
+proposal after it comes back rejected from PACT&#x27;s review flow, per the
+&quot;reject -&gt; refine -&gt; resubmit&quot; loop from the 2026-07-12 meeting.
+
+Deliberately has no status parameter: this tool cannot move a
+requirement between proposed/approved/rejected states, on a proposal
+created via create_requirement or otherwise. That transition only
+happens inside PACT&#x27;s own review UI, by a human.</td><td class="mono hash">45256397d0c7</td></tr></tbody>
+  </table>
+
+  <h2>Findings &middot; permission mismatch</h2>
+  <p class="empty-cell">No permission mismatches.</p>
+
+  <h2>Findings &middot; secrets</h2>
+  <p class="empty-cell">No secrets detected.</p>
+
+  <h2>Findings &middot; dependency CVEs</h2>
+  <p class="empty-cell">No dependency findings.</p>
+
+  <h2>Drift history &middot; pure hashing, all events</h2>
+  <table>
+    <thead><tr><th>timestamp</th><th>type</th><th>tool</th><th>detail</th></tr></thead>
+    <tbody><p class="empty-cell">No drift events logged for this target.</p></tbody>
+  </table>
+
+  <footer>generated 2026-08-22 01:58 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
+</div>
+</body></html>

@@ -20,6 +20,7 @@ class TargetSummary:
     drift_event_count: int = 0
     anomaly_call_count: int = 0
     recent_drift_events: list[dict] = field(default_factory=list)
+    all_drift_events: list[dict] = field(default_factory=list)
     session_count: int = 0
 
     @property
@@ -95,6 +96,7 @@ def build_summaries(reports_dir: Path, logs_dir: Path) -> list[TargetSummary]:
                 drift_event_count=len(drift_records),
                 anomaly_call_count=len(anomaly_calls),
                 recent_drift_events=drift_records[-10:],
+                all_drift_events=drift_records,
                 session_count=len(session_ids),
             )
         )

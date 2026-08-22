@@ -14,6 +14,7 @@ from html import escape
 from pathlib import Path
 
 from reporting.audit_summary import TargetSummary, build_summaries
+from reporting.target_detail import build_and_write_all
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -82,11 +83,13 @@ def _target_card(summary: TargetSummary) -> str:
     tool_count = fp.get("tool_count", "—")
     server_name = escape(scan.get("server_name") or summary.slug)
 
+    detail_href = f"target-{summary.slug}.html"
+
     return f"""
     <article class="card">
       <header class="card-head">
         <div>
-          <div class="card-slug">{escape(summary.slug)}</div>
+          <div class="card-slug"><a class="card-slug-link" href="{escape(detail_href)}">{escape(summary.slug)}</a></div>
           <div class="card-server">{server_name}</div>
         </div>
         {_status_pill(summary)}
@@ -162,6 +165,8 @@ h1{{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.0
 .card{{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 22px;}}
 .card-head{{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px;}}
 .card-slug{{font-family:var(--mono); font-size:17px; font-weight:600; color:var(--ink);}}
+.card-slug-link{{color:inherit; text-decoration:none; border-bottom:1px dashed var(--border-strong);}}
+.card-slug-link:hover{{color:var(--brass); border-bottom-color:var(--brass);}}
 .card-server{{color:var(--ink-faint); font-size:12.5px; margin-top:2px;}}
 
 .pill{{font-family:var(--head); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; padding:4px 11px; border-radius:20px; white-space:nowrap; border:1px solid transparent;}}
@@ -244,6 +249,10 @@ def build_and_write(reports_dir: Path | None = None, logs_dir: Path | None = Non
     html = render_dashboard(summaries)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html, encoding="utf-8")
+    # Per-target drill-down pages live alongside dashboard.html so the
+    # dashboard's relative links ("target-<slug>.html") resolve the same
+    # way locally and once GitHub Pages serves reports/ as _site/.
+    build_and_write_all(reports_dir, logs_dir, out_path.parent)
     return out_path
 
 
