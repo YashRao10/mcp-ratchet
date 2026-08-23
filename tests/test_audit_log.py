@@ -106,6 +106,35 @@ def test_truncating_the_trailing_record_is_detected_as_an_incomplete_but_valid_p
     assert result.records_checked == len(lines) - 1
 
 
+def test_blocked_call_chains_correctly_and_never_leaks_raw_args_by_default(tmp_path):
+    with AuditLogWriter(tmp_path, "test-target") as log:
+        log.blocked_call(
+            tool_name="delete_all_notes",
+            reason="Tool has drifted from baseline; refused under --block-on-drift.",
+            arguments={"confirm": True},
+        )
+    path = log.path
+
+    result = verify_chain(path)
+    assert result.ok is True
+
+    records = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines()]
+    blocked = [r for r in records if r["record_type"] == "blocked_call"]
+    assert len(blocked) == 1
+    assert blocked[0]["tool_name"] == "delete_all_notes"
+    assert blocked[0]["args_raw"] is None  # log_raw_args defaults to False
+    assert blocked[0]["args_shape_hash"]  # still recorded, just not the real values
+
+
+def test_blocked_call_logs_raw_args_when_log_raw_args_is_set(tmp_path):
+    with AuditLogWriter(tmp_path, "test-target", log_raw_args=True) as log:
+        log.blocked_call(tool_name="delete_all_notes", reason="refused", arguments={"confirm": True})
+
+    records = [json.loads(l) for l in log.path.read_text(encoding="utf-8").splitlines()]
+    blocked = [r for r in records if r["record_type"] == "blocked_call"][0]
+    assert blocked["args_raw"] == {"confirm": True}
+
+
 def test_a_log_written_by_a_non_chain_aware_source_is_flagged_as_such(tmp_path):
     path = tmp_path / "foreign.jsonl"
     path.write_text(json.dumps({"schema_version": "mcp-ratchet-audit-log/1", "record_type": "session_start"}) + "\n", encoding="utf-8")

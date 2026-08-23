@@ -49,6 +49,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Log real tool-call argument values, not just their shape hash. Off by default for privacy.",
     )
+    parser.add_argument(
+        "--block-on-drift",
+        action="store_true",
+        help=(
+            "Refuse a call to any tool this proxy currently believes has drifted from "
+            "baseline (added, or changed since the last scan), instead of only logging "
+            "it. Off by default — the proxy monitors and forwards every call unless you "
+            "opt in here. See proxy/server_side.py's build_proxy_server docstring for "
+            "exactly what 'currently believes' covers."
+        ),
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER, help="Local downstream launch command, after a literal --.")
     args = parser.parse_args(argv)
 
@@ -98,7 +109,7 @@ async def run(args: argparse.Namespace) -> None:
 
     async with DownstreamClient(downstream_target) as downstream:
         with audit_log:
-            server = build_proxy_server(downstream, baseline, audit_log)
+            server = build_proxy_server(downstream, baseline, audit_log, block_on_drift=args.block_on_drift)
             init_options = server.create_initialization_options()
             async with stdio_server() as (read_stream, write_stream):
                 await server.run(read_stream, write_stream, init_options)

@@ -88,9 +88,17 @@ places, and they carry different weight:
   bare `package.json`/`pyproject.toml` without an accompanying lockfile —
   that's a real gap for direct-manifest-only projects, not a claim that
   every ecosystem is fully covered.
-- The proxy only monitors — it never blocks a call even when drift is
-  detected. Blocking/policy-enforcement mode is a plausible future
-  direction, not current behavior.
+- The proxy monitors by default and never blocks a call on its own —
+  `--block-on-drift` (opt-in, off unless passed) refuses a call to any
+  tool currently believed to have drifted from baseline (added, or an
+  existing tool with a changed description/schema/annotations), before
+  ever reaching the downstream server. "Currently believed" means as of
+  the most recent `tools/list` diff this session; a call made before this
+  proxy has listed tools yet cannot be assessed and is allowed through
+  (fails open on missing information, not closed) — see
+  `proxy/server_side.py`'s `build_proxy_server` docstring. There's still
+  no persistent policy store or allow/deny-listing beyond this single
+  per-session drift check.
 - The dashboard aggregates whatever's on disk in `reports/`/`logs/` at
   build time — it has no live/push updates, it's a static snapshot
   regenerated on every push to `main`.
@@ -149,9 +157,11 @@ python -m proxy.run_proxy --target toy -- python tests/fixtures/toy_server.py
 
 Every call is logged to `logs/<slug>-<session>.jsonl` per the schema in
 `schemas/audit_log_v1.schema.json` — tool-call arguments are hashed by
-default, not stored raw (`--log-raw-args` to opt in). The proxy never
-blocks a call, even when drift is detected — it's a monitor, not a
-policy-enforcement gate, in this version.
+default, not stored raw (`--log-raw-args` to opt in). By default the proxy
+only monitors, never blocking a call even when drift is detected. Pass
+`--block-on-drift` to make it refuse a call to any tool it currently
+believes has drifted from baseline instead — see the "not yet built"
+section above for exactly what that mode does and doesn't cover.
 
 Every record in that file is hash-chained to the one before it, so
 editing, reordering, or truncating any past line breaks the chain for

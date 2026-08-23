@@ -29,3 +29,16 @@ the dependency-CVE check's lockfile-resolution gap: `poetry.lock` and
 already gave npm), plus made `requirements.txt` parsing handle real
 pip-compile output (`\`-continued lines, `--hash=...` trailers) instead of
 only a bare pin list.
+
+Same session, continued after "yeah keep adding and building its weekend
+so u dont need to check in as often" (a standing weekend-autonomy grant,
+not project-specific): picked up the next README-flagged gap, proxy
+blocking/policy mode. Added an opt-in `--block-on-drift` flag — refuses a
+call to any tool currently believed drifted from baseline (added, or an
+existing tool changed) before it ever reaches the downstream server,
+fail-open before the first `tools/list` call this session. New
+`blocked_call` audit-log record type, wired into both the dashboard cards
+and the per-target detail page. Session ended for the night right after
+this landed ("ok actually we are going to log off for the night pick up
+tomorrow" / "save and exit") — commit+push only, no further feature work
+started.

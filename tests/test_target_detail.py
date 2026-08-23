@@ -114,6 +114,36 @@ def test_render_target_detail_shows_full_drift_history_not_just_recent_ten(tmp_p
     assert "tool_11" in html
 
 
+def test_render_target_detail_shows_full_blocked_call_history_not_just_recent_ten(tmp_path):
+    reports_dir = tmp_path / "reports"
+    logs_dir = tmp_path / "logs"
+    _write_scan(reports_dir, "toy")
+    for i in range(12):
+        _write_log_line(
+            logs_dir,
+            "toy",
+            "blocked_call",
+            tool_name=f"tool_{i}",
+            detail=f"refused #{i}",
+            timestamp=f"2026-08-2{i % 9}T00:00:00Z",
+        )
+
+    summary = build_summaries(reports_dir, logs_dir)[0]
+    assert len(summary.recent_blocked_calls) == 10  # card summary stays capped
+    assert len(summary.all_blocked_calls) == 12  # detail page gets everything
+
+    html = render_target_detail(summary)
+    assert "tool_0" in html  # would be missing if this page only used the last-10 slice
+    assert "tool_11" in html
+
+
+def test_render_target_detail_no_blocked_calls_state_does_not_crash():
+    from reporting.audit_summary import TargetSummary
+
+    html = render_target_detail(TargetSummary(slug="unscanned"))
+    assert "No calls blocked for this target" in html
+
+
 def test_build_and_write_all_writes_one_file_per_target(tmp_path):
     reports_dir = tmp_path / "reports"
     _write_scan(reports_dir, "alpha")

@@ -66,6 +66,34 @@ def test_build_summaries_counts_calls_and_drift(tmp_path):
     assert summary.is_clean is True  # scan itself is clean; drift is a separate signal
 
 
+def test_build_summaries_counts_blocked_calls(tmp_path):
+    reports_dir = tmp_path / "reports"
+    logs_dir = tmp_path / "logs"
+    _write_scan(reports_dir, "toy", is_clean=True)
+    _write_log_line(logs_dir, "toy", "blocked_call", tool_name="delete_all_notes", detail="refused")
+    _write_log_line(logs_dir, "toy", "tool_call")
+
+    summaries = build_summaries(reports_dir, logs_dir)
+    summary = summaries[0]
+    assert summary.blocked_call_count == 1
+    assert summary.has_blocked_calls is True
+    assert summary.recent_blocked_calls[0]["tool_name"] == "delete_all_notes"
+    # Doesn't get mistaken for a normal tool_call in the call count:
+    assert summary.call_count == 1
+
+
+def test_render_dashboard_shows_blocked_call_in_card(tmp_path):
+    reports_dir = tmp_path / "reports"
+    logs_dir = tmp_path / "logs"
+    _write_scan(reports_dir, "toy", is_clean=True)
+    _write_log_line(logs_dir, "toy", "blocked_call", tool_name="delete_all_notes", detail="drifted, refused")
+
+    summaries = build_summaries(reports_dir, logs_dir)
+    html = render_dashboard(summaries)
+    assert "delete_all_notes" in html
+    assert "block-on-drift" in html
+
+
 def test_build_summaries_handles_target_with_no_scan_yet(tmp_path):
     logs_dir = tmp_path / "logs"
     _write_log_line(logs_dir, "unscanned-target", "tool_call")

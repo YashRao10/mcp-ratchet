@@ -21,7 +21,7 @@ from mcp.server.lowlevel import Server
 from proxy import forward
 from proxy.audit_log import AuditLogWriter
 from proxy.client_side import DownstreamClient
-from proxy.drift import diff_against_baseline
+from proxy.drift import DRIFT_TOOL_REMOVED, diff_against_baseline
 from scanner.fingerprint import ServerFingerprint
 
 
@@ -30,15 +30,32 @@ def build_proxy_server(
     baseline: ServerFingerprint | None,
     audit_log: AuditLogWriter,
     server_name: str = "mcp-ratchet-proxy",
+    block_on_drift: bool = False,
 ) -> Server:
     """Construct the low-level Server that fronts `downstream`.
 
     `baseline` may be None (no Phase 1 scan has been run for this target
     yet) — in that case drift detection is skipped and this is noted
     explicitly rather than silently treated as "no drift."
+
+    `block_on_drift` (off by default, matching the README's long-standing
+    "the proxy only monitors" default): when True, a call to any tool this
+    proxy currently believes has drifted from baseline — added, or an
+    existing tool with a changed description/schema/annotations — is
+    refused locally, without ever reaching `downstream`, instead of just
+    being logged. "Currently believes" means as of the most recent
+    `tools/list` diff this session; a tool call made before this proxy has
+    ever listed tools yet cannot be assessed and is allowed through
+    (fail-open on missing information, same posture the rest of this
+    check-suite takes — see dependency_cve.py's network-failure handling
+    for the same principle applied elsewhere). A tool removed from
+    baseline is not tracked here for blocking purposes: downstream will
+    already reject a call to a tool it no longer declares.
     """
+    drifted_tool_names: set[str] = set()
 
     async def on_list_tools(ctx, params) -> types.ListToolsResult:
+        nonlocal drifted_tool_names
         result = await forward.forward_list_tools(downstream)
 
         if baseline is None:
@@ -46,6 +63,7 @@ def build_proxy_server(
                 error_type="no_baseline",
                 error_message="No Phase 1 baseline exists for this target; drift detection skipped this call.",
             )
+            drifted_tool_names = set()
         else:
             live_fp, drift_events = diff_against_baseline(result.tools, baseline)
             audit_log.tools_list_snapshot(
@@ -55,11 +73,17 @@ def build_proxy_server(
             )
             for event in drift_events:
                 audit_log.drift_event(event)
+            # Replaces, not accumulates: reflects what's drifted as of this
+            # latest list, not every drift ever seen across the session.
+            drifted_tool_names = {
+                event.tool_name for event in drift_events if event.drift_type != DRIFT_TOOL_REMOVED
+            }
 
-        # Transparency requirement: forward the real result unmodified,
-        # even if drift was detected — this proxy monitors, it doesn't
-        # block. A blocking mode is a documented future direction, not
-        # this version's behavior (see README).
+        # Transparency requirement: forward the real tools/list result
+        # unmodified, even if drift was detected — a client always sees
+        # the server's true declared tool surface. Blocking, when enabled,
+        # only ever intercepts a subsequent tool *call*, in on_call_tool
+        # below, never this listing itself.
         return result
 
     async def on_call_tool(ctx, params: types.CallToolRequestParams):
@@ -67,6 +91,20 @@ def build_proxy_server(
         anomaly_flags = []
         if baseline is not None and params.name not in baseline.per_tool_hashes:
             anomaly_flags.append("tool_not_in_baseline")
+
+        if block_on_drift and params.name in drifted_tool_names:
+            duration_ms = (time.monotonic() - start) * 1000
+            reason = (
+                f"Tool '{params.name}' has drifted from its baseline fingerprint "
+                "(added or changed since the last approved scan) and this proxy is "
+                "running with --block-on-drift. Call refused before reaching the "
+                "downstream server."
+            )
+            audit_log.blocked_call(tool_name=params.name, reason=reason, arguments=params.arguments)
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=reason)],
+                is_error=True,
+            )
 
         try:
             result = await forward.forward_call_tool(downstream, params.name, params.arguments)

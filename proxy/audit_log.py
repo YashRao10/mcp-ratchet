@@ -195,6 +195,23 @@ class AuditLogWriter:
             }
         )
 
+    def blocked_call(self, tool_name: str, reason: str, arguments: dict | None = None) -> None:
+        """A call refused locally under --block-on-drift, before ever
+        reaching the downstream server — distinct from `tool_call`'s
+        result_status="error" (which means the downstream server itself
+        errored) so a report can tell "this proxy stopped it" apart from
+        "the real server rejected it." args are hashed under the same
+        log_raw_args policy as tool_call, for the same privacy reason."""
+        self._write(
+            {
+                "record_type": "blocked_call",
+                "tool_name": tool_name,
+                "detail": reason,
+                "args_shape_hash": hash_shape(arguments or {}),
+                "args_raw": arguments if self.log_raw_args else None,
+            }
+        )
+
     def drift_event(self, event) -> None:
         """`event` is a proxy.drift.DriftEvent."""
         self._write({"record_type": "drift_event", **{k: v for k, v in event.to_dict().items() if k != "record_type"}})

@@ -68,6 +68,19 @@ def _drift_rows(events: list[dict]) -> str:
     return "".join(rows)
 
 
+def _blocked_rows(records: list[dict]) -> str:
+    if not records:
+        return '<p class="empty-cell">No calls blocked for this target (either --block-on-drift was never used, or nothing drifted while it was on).</p>'
+    rows = []
+    for b in records:
+        rows.append(
+            f'<tr><td class="mono">{escape(str(b.get("timestamp", "")))}</td>'
+            f'<td class="mono">{escape(str(b.get("tool_name", "?")))}</td>'
+            f'<td>{escape(str(b.get("detail", "")))}</td></tr>'
+        )
+    return "".join(rows)
+
+
 def render_target_detail(summary: TargetSummary) -> str:
     scan = summary.latest_scan or {}
     s = scan.get("summary", {})
@@ -132,6 +145,7 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
     <span><b>calls audited:</b> {summary.call_count}</span>
     <span><b>sessions:</b> {summary.session_count}</span>
     <span><b>drift events:</b> {summary.drift_event_count}</span>
+    <span><b>blocked calls:</b> {summary.blocked_call_count}</span>
   </div>
   <div class="meta-row">
     <span><b>whole-server hash:</b> <span class="mono hash">{whole_hash}</span></span>
@@ -156,6 +170,12 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
   <table>
     <thead><tr><th>timestamp</th><th>type</th><th>tool</th><th>detail</th></tr></thead>
     <tbody>{_drift_rows(summary.all_drift_events)}</tbody>
+  </table>
+
+  <h2>Blocked calls &middot; --block-on-drift</h2>
+  <table>
+    <thead><tr><th>timestamp</th><th>tool</th><th>reason</th></tr></thead>
+    <tbody>{_blocked_rows(summary.all_blocked_calls)}</tbody>
   </table>
 
   <footer>generated {generated_page_at} &middot; schema: mcp-ratchet-audit-log/1</footer>

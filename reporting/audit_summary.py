@@ -22,6 +22,9 @@ class TargetSummary:
     recent_drift_events: list[dict] = field(default_factory=list)
     all_drift_events: list[dict] = field(default_factory=list)
     session_count: int = 0
+    blocked_call_count: int = 0
+    recent_blocked_calls: list[dict] = field(default_factory=list)
+    all_blocked_calls: list[dict] = field(default_factory=list)
 
     @property
     def is_clean(self) -> bool:
@@ -32,6 +35,10 @@ class TargetSummary:
     @property
     def has_live_drift(self) -> bool:
         return self.drift_event_count > 0
+
+    @property
+    def has_blocked_calls(self) -> bool:
+        return self.blocked_call_count > 0
 
 
 def load_latest_scans(reports_dir: Path) -> dict[str, dict]:
@@ -85,6 +92,7 @@ def build_summaries(reports_dir: Path, logs_dir: Path) -> list[TargetSummary]:
         records = logs_by_slug.get(slug, [])
         call_records = [r for r in records if r.get("record_type") == "tool_call"]
         drift_records = [r for r in records if r.get("record_type") == "drift_event"]
+        blocked_records = [r for r in records if r.get("record_type") == "blocked_call"]
         anomaly_calls = [r for r in call_records if r.get("anomaly_flags")]
         session_ids = {r.get("session_id") for r in records if r.get("session_id")}
 
@@ -98,6 +106,9 @@ def build_summaries(reports_dir: Path, logs_dir: Path) -> list[TargetSummary]:
                 recent_drift_events=drift_records[-10:],
                 all_drift_events=drift_records,
                 session_count=len(session_ids),
+                blocked_call_count=len(blocked_records),
+                recent_blocked_calls=blocked_records[-10:],
+                all_blocked_calls=blocked_records,
             )
         )
 

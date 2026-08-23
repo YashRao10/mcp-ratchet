@@ -8,7 +8,8 @@
   "properties": {
     "schema_version": { "const": "mcp-ratchet-audit-log/1" },
     "record_type": {
-      "enum": ["tool_call", "tools_list_snapshot", "drift_event", "session_start", "session_end", "error"]
+      "enum": ["tool_call", "tools_list_snapshot", "drift_event", "blocked_call", "session_start", "session_end", "error"],
+      "description": "blocked_call (--block-on-drift only) reuses tool_name, detail, args_shape_hash, and args_raw below — no dedicated fields of its own; it means the call was refused locally by this proxy, distinct from tool_call's result_status=\"error\" which means the downstream server itself errored."
     },
     "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601, UTC." },
     "session_id": { "type": "string", "format": "uuid", "description": "One per proxy process lifetime." },

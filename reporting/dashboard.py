@@ -79,6 +79,18 @@ def _target_card(summary: TargetSummary) -> str:
         else ""
     )
 
+    blocked_rows = "".join(
+        f'<li><span class="drift-tool">{escape(b.get("tool_name", "?"))}</span>'
+        f'<span class="drift-detail">{escape((b.get("detail") or "")[:140])}</span></li>'
+        for b in summary.recent_blocked_calls
+    )
+    blocked_block = (
+        f'<div class="tier tier-blocked"><div class="drift-log"><div class="drift-log-label">'
+        f'--block-on-drift · calls refused</div><ul>{blocked_rows}</ul></div></div>'
+        if blocked_rows
+        else ""
+    )
+
     scanned_at = escape(scan.get("generated_at", "never"))
     tool_count = fp.get("tool_count", "—")
     server_name = escape(scan.get("server_name") or summary.slug)
@@ -95,11 +107,12 @@ def _target_card(summary: TargetSummary) -> str:
         {_status_pill(summary)}
       </header>
 
-      <dl class="stat-row">
+      <dl class="stat-row stat-row-5">
         <div><dt>tools</dt><dd>{tool_count}</dd></div>
         <div><dt>calls</dt><dd>{summary.call_count}</dd></div>
         <div><dt>sessions</dt><dd>{summary.session_count}</dd></div>
         <div><dt>drift</dt><dd class="{'v-warn' if summary.drift_event_count else ''}">{summary.drift_event_count}</dd></div>
+        <div><dt>blocked</dt><dd class="{'v-warn' if summary.blocked_call_count else ''}">{summary.blocked_call_count}</dd></div>
       </dl>
 
       {tiers}
@@ -107,6 +120,7 @@ def _target_card(summary: TargetSummary) -> str:
       <div class="card-foot">last scanned {scanned_at}</div>
 
       {drift_block}
+      {blocked_block}
     </article>"""
 
 
@@ -117,6 +131,7 @@ def render_dashboard(summaries: list[TargetSummary]) -> str:
     drifted = sum(1 for s in summaries if s.has_live_drift)
     total_calls = sum(s.call_count for s in summaries)
     total_drift_events = sum(s.drift_event_count for s in summaries)
+    total_blocked_calls = sum(s.blocked_call_count for s in summaries)
 
     cards = "".join(_target_card(s) for s in summaries) or (
         '<p class="empty">No targets scanned yet. Run <code>python -m scanner.run_scan</code> '
@@ -176,6 +191,7 @@ h1{{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.0
 .pill-unknown{{background:var(--surface-2); color:var(--ink-faint); border-color:var(--border-strong);}}
 
 .stat-row{{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 16px; padding:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}}
+.stat-row-5{{grid-template-columns:repeat(5,1fr);}}
 .stat-row dt{{font-family:var(--head); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); margin:0; white-space:nowrap;}}
 .stat-row dd{{font-family:var(--mono); font-size:19px; font-weight:600; margin:2px 0 0; font-variant-numeric:tabular-nums;}}
 .stat-row .v-warn{{color:var(--critical);}}
@@ -183,6 +199,8 @@ h1{{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.0
 .tier{{margin-bottom:12px;}}
 .tier-label{{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin-bottom:6px;}}
 .tier-hash .tier-label,.tier-hash .drift-log-label{{color:var(--critical);}}
+.tier-blocked .drift-log-label{{color:var(--warn);}}
+.tier-blocked .drift-tool{{color:var(--warn);}}
 .chip-row{{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}}
 .chip{{font-family:var(--mono); font-size:11.5px; display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:5px; border:1px solid var(--border-strong); color:var(--ink-soft);}}
 .chip-n{{font-weight:600; color:var(--ink);}}
@@ -231,7 +249,7 @@ footer a:hover{{text-decoration:underline;}}
   </div>
 
   <footer>
-    <span>schema: mcp-ratchet-audit-log/1 &middot; {total_drift_events} total drift events logged</span>
+    <span>schema: mcp-ratchet-audit-log/1 &middot; {total_drift_events} total drift events logged &middot; {total_blocked_calls} calls blocked</span>
     <span><a href="https://github.com/YashRao10/mcp-ratchet">github.com/YashRao10/mcp-ratchet</a></span>
   </footer>
 
