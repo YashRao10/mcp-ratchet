@@ -42,18 +42,74 @@ _REQUIREMENTS_LINE = re.compile(r"^\s*([A-Za-z0-9_.\-]+)\s*==\s*([A-Za-z0-9_.\-]
 
 def parse_requirements_txt(path: Path) -> list[tuple[str, str]]:
     """Only pinned (==) entries are checkable against a specific version —
-    unpinned/ranged requirements are skipped rather than guessed at."""
+    unpinned/ranged requirements are skipped rather than guessed at.
+
+    Also handles pip-compile output, which is the same file format but
+    with `\\`-continued lines and `--hash=...`/`# via ...` trailer lines —
+    the trailing backslash is stripped before matching, and hash/via
+    trailer lines simply never match the pin regex, so they're skipped
+    the same way a comment-only line already was.
+    """
     if not path.exists():
         return []
     pinned = []
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.split("#", 1)[0].strip()
+        line = line.removesuffix("\\").strip()
         if not line:
             continue
         match = _REQUIREMENTS_LINE.match(line)
         if match:
             pinned.append((match.group(1), match.group(2)))
     return pinned
+
+
+def parse_poetry_lock(path: Path) -> list[tuple[str, str]]:
+    """Every `[[package]]` table in a poetry.lock is already a single
+    resolved version — direct and transitive alike, same guarantee
+    package-lock.json gives on the npm side. Malformed/missing files
+    degrade to empty, same convention as every other parser here."""
+    if not path.exists():
+        return []
+    import tomllib
+
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+
+    resolved = []
+    for package in data.get("package") or []:
+        name = package.get("name")
+        version = package.get("version")
+        if name and version:
+            resolved.append((name, version))
+    return resolved
+
+
+def parse_pipfile_lock(path: Path) -> list[tuple[str, str]]:
+    """Pipfile.lock is JSON with "default" (runtime) and "develop" (dev-only)
+    sections, each package's version pinned as "==X.Y.Z" — includes
+    transitive deps, Pipenv resolves the full graph into this file the same
+    way poetry.lock and package-lock.json do for their ecosystems."""
+    if not path.exists():
+        return []
+    import json
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+    resolved: dict[str, str] = {}
+    for section in ("default", "develop"):
+        for name, entry in (data.get(section) or {}).items():
+            if not isinstance(entry, dict):
+                continue
+            version = entry.get("version")
+            if version:
+                resolved[name] = version.removeprefix("==")
+    return list(resolved.items())
 
 
 def parse_package_json(path: Path) -> list[tuple[str, str]]:
@@ -137,9 +193,16 @@ def find_manifest(root: Path) -> tuple[str, Path] | None:
     resolved version, where package.json alone only has direct
     dependencies and often a version *range* the CVE check can't act on
     (see check_manifest_dir's ecosystem dispatch below for how the two
-    parse differently).
+    parse differently). poetry.lock and Pipfile.lock get the same
+    priority treatment on the Python side, ahead of a bare
+    requirements.txt — a project managed by Poetry or Pipenv may not even
+    have a requirements.txt, and when it does, it's often only the direct
+    deps a human bothered to freeze, not the full resolved graph a
+    lockfile guarantees.
     """
     for candidate, ecosystem in (
+        (root / "poetry.lock", "poetry-lock"),
+        (root / "Pipfile.lock", "pipenv-lock"),
         (root / "requirements.txt", "PyPI"),
         (root / "package-lock.json", "npm-lock"),
         (root / "package.json", "npm"),
@@ -179,6 +242,10 @@ def check_manifest_dir(root: Path) -> list[DependencyFinding]:
     ecosystem, path = manifest
     if ecosystem == "PyPI":
         pinned = parse_requirements_txt(path)
+    elif ecosystem == "poetry-lock":
+        pinned = parse_poetry_lock(path)
+    elif ecosystem == "pipenv-lock":
+        pinned = parse_pipfile_lock(path)
     elif ecosystem == "npm-lock":
         pinned = parse_package_lock_json(path)
     else:
@@ -186,10 +253,16 @@ def check_manifest_dir(root: Path) -> list[DependencyFinding]:
     if not pinned:
         return []
 
-    # "npm-lock" is this check's own tag for "came from a lockfile, so
-    # every version here is fully resolved, including transitive deps" —
-    # OSV.dev itself only knows the real ecosystem name.
-    osv_ecosystem = "npm" if ecosystem == "npm-lock" else ecosystem
+    # "npm-lock"/"poetry-lock"/"pipenv-lock" are this check's own tags for
+    # "came from a lockfile, so every version here is fully resolved,
+    # including transitive deps" — OSV.dev itself only knows the real
+    # ecosystem name (PyPI or npm).
+    if ecosystem in ("poetry-lock", "pipenv-lock"):
+        osv_ecosystem = "PyPI"
+    elif ecosystem == "npm-lock":
+        osv_ecosystem = "npm"
+    else:
+        osv_ecosystem = ecosystem
 
     findings: list[DependencyFinding] = []
     with httpx.Client() as client:

@@ -99,6 +99,127 @@ def test_parse_package_lock_json_missing_or_malformed_returns_empty(tmp_path):
     assert dc.parse_package_lock_json(bad) == []
 
 
+def test_parse_requirements_txt_handles_pip_compile_continuation_and_hashes(tmp_path):
+    """pip-compile output is the same file format but with `\\`-continued
+    lines and `--hash=...`/`# via ...` trailer lines — this is the gap the
+    README named explicitly for Python ("no support yet for ...
+    pip-compile output")."""
+    reqs = tmp_path / "requirements.txt"
+    reqs.write_text(
+        "httpx==0.27.0 \\\n"
+        "    --hash=sha256:aaaa \\\n"
+        "    --hash=sha256:bbbb\n"
+        "    # via -r requirements.in\n"
+        "pydantic==2.9.2\n",
+        encoding="utf-8",
+    )
+    pinned = dc.parse_requirements_txt(reqs)
+    assert set(pinned) == {("httpx", "0.27.0"), ("pydantic", "2.9.2")}
+
+
+def test_parse_poetry_lock_resolves_every_package(tmp_path):
+    lock = tmp_path / "poetry.lock"
+    lock.write_text(
+        '[[package]]\n'
+        'name = "httpx"\n'
+        'version = "0.27.0"\n'
+        'description = "x"\n'
+        '\n'
+        '[[package]]\n'
+        'name = "pydantic"\n'
+        'version = "2.9.2"\n'
+        'description = "y"\n',
+        encoding="utf-8",
+    )
+    resolved = dict(dc.parse_poetry_lock(lock))
+    assert resolved == {"httpx": "0.27.0", "pydantic": "2.9.2"}
+
+
+def test_parse_poetry_lock_missing_or_malformed_returns_empty(tmp_path):
+    assert dc.parse_poetry_lock(tmp_path / "nope.lock") == []
+    bad = tmp_path / "poetry.lock"
+    bad.write_text("not [ valid toml", encoding="utf-8")
+    assert dc.parse_poetry_lock(bad) == []
+
+
+def test_parse_pipfile_lock_resolves_default_and_develop_sections(tmp_path):
+    lock = tmp_path / "Pipfile.lock"
+    lock.write_text(
+        """{
+        "_meta": {},
+        "default": {"httpx": {"version": "==0.27.0", "hashes": []}},
+        "develop": {"pytest": {"version": "==7.4.0", "hashes": []}}
+        }""",
+        encoding="utf-8",
+    )
+    resolved = dict(dc.parse_pipfile_lock(lock))
+    assert resolved == {"httpx": "0.27.0", "pytest": "7.4.0"}
+
+
+def test_parse_pipfile_lock_missing_or_malformed_returns_empty(tmp_path):
+    assert dc.parse_pipfile_lock(tmp_path / "nope.json") == []
+    bad = tmp_path / "Pipfile.lock"
+    bad.write_text("{not valid json", encoding="utf-8")
+    assert dc.parse_pipfile_lock(bad) == []
+
+
+def test_find_manifest_prefers_poetry_lock_over_requirements_txt(tmp_path):
+    (tmp_path / "requirements.txt").write_text("httpx==0.27.0\n", encoding="utf-8")
+    (tmp_path / "poetry.lock").write_text('[[package]]\nname = "x"\nversion = "1.0"\n', encoding="utf-8")
+    ecosystem, path = dc.find_manifest(tmp_path)
+    assert ecosystem == "poetry-lock"
+    assert path.name == "poetry.lock"
+
+
+def test_find_manifest_prefers_pipfile_lock_over_requirements_txt(tmp_path):
+    (tmp_path / "requirements.txt").write_text("httpx==0.27.0\n", encoding="utf-8")
+    (tmp_path / "Pipfile.lock").write_text('{"default": {}}', encoding="utf-8")
+    ecosystem, path = dc.find_manifest(tmp_path)
+    assert ecosystem == "pipenv-lock"
+    assert path.name == "Pipfile.lock"
+
+
+def test_check_manifest_dir_reports_vulnerable_pin_from_poetry_lock(tmp_path, monkeypatch):
+    lock = tmp_path / "poetry.lock"
+    lock.write_text(
+        '[[package]]\nname = "jinja2"\nversion = "2.4.1"\n',
+        encoding="utf-8",
+    )
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "jinja2" and version == "2.4.1":
+            return ["GHSA-462w-v97r-4m45"]
+        return []
+
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].package_name == "jinja2"
+    assert findings[0].ecosystem == "PyPI"
+    assert findings[0].vulnerability_ids == ["GHSA-462w-v97r-4m45"]
+
+
+def test_check_manifest_dir_reports_vulnerable_pin_from_pipfile_lock(tmp_path, monkeypatch):
+    lock = tmp_path / "Pipfile.lock"
+    lock.write_text(
+        """{"default": {"jinja2": {"version": "==2.4.1", "hashes": []}}}""",
+        encoding="utf-8",
+    )
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "jinja2" and version == "2.4.1":
+            return ["GHSA-462w-v97r-4m45"]
+        return []
+
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].package_name == "jinja2"
+    assert findings[0].ecosystem == "PyPI"
+
+
 def test_find_manifest_prefers_lockfile_over_bare_package_json(tmp_path):
     """A lockfile resolves every version exactly; a bare package.json often
     has ^/~ ranges this check can't act on — so when both exist, the

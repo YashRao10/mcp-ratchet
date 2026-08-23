@@ -18,3 +18,14 @@ MCP-scanner space specifically ("Yeah the MCP scanner is a good idea that
 you had at the end 17,000 new MCPs but no real checkers for them"); then
 explicitly widened scope beyond a lightweight linter ("But it doesn't have
 to be just lightweight could make it a stronger scanner").
+
+---
+
+**2026-08-23** — "build on the mcppproject", then chose from a menu of
+README-flagged gaps: "Python lockfile CVE resolution" (over proxy
+blocking/policy mode and trust-tier scoring). Closed the Python side of
+the dependency-CVE check's lockfile-resolution gap: `poetry.lock` and
+`Pipfile.lock` parsing (transitive deps, same guarantee `package-lock.json`
+already gave npm), plus made `requirements.txt` parsing handle real
+pip-compile output (`\`-continued lines, `--hash=...` trailers) instead of
+only a bare pin list.

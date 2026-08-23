@@ -77,15 +77,17 @@ places, and they carry different weight:
   those events outright is deliberately not offered — see "Read this
   before trusting a report" above for why that guarantee isn't
   negotiable.
-- The dependency-CVE check looks at exact-pinned versions in a
-  `requirements.txt` (Python, direct deps only) or, preferred when present,
-  an npm `package-lock.json` (JavaScript, direct **and** transitive deps,
-  since a lockfile resolves every version rather than leaving it as a
-  `^`/`~` range) sitting next to a local target's launch script. Python
-  still has no lockfile-resolution path (no support yet for
-  `poetry.lock`/`Pipfile.lock`/pip-compile output) and there's still no
-  transitive-dependency resolution for a bare `package.json` without an
-  accompanying lockfile.
+- The dependency-CVE check looks at exact-pinned versions in a manifest or
+  lockfile sitting next to a local target's launch script, preferring a
+  lockfile over its corresponding bare manifest whenever both exist (a
+  lockfile resolves every version, direct **and** transitive, rather than
+  leaving it as a `^`/`~`/unpinned range): `poetry.lock`, `Pipfile.lock`,
+  `requirements.txt` (also handles pip-compile's `\`-continued/`--hash=`
+  output, not just a plain pin list), npm's `package-lock.json`, then
+  `package.json`. There's still no transitive-dependency resolution for a
+  bare `package.json`/`pyproject.toml` without an accompanying lockfile —
+  that's a real gap for direct-manifest-only projects, not a claim that
+  every ecosystem is fully covered.
 - The proxy only monitors — it never blocks a call even when drift is
   detected. Blocking/policy-enforcement mode is a plausible future
   direction, not current behavior.
