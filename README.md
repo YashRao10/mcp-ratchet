@@ -99,12 +99,24 @@ places, and they carry different weight:
   leaving it as a `^`/`~`/unpinned range): `poetry.lock`, `Pipfile.lock`,
   `requirements.txt`, `pyproject.toml` (also handles pip-compile's
   `\`-continued/`--hash=` output, not just a plain pin list), npm's
-  `package-lock.json`, then `package.json`. When none of that resolves a
+  `package-lock.json`, **Yarn's `yarn.lock`** (classic v1 lockfile format
+  only — not the newer Yarn Berry/v2+ format, which is real YAML and isn't
+  parsed here), then `package.json`. If both `package-lock.json` and
+  `yarn.lock` exist (a migration artifact, in practice), `package-lock.json`
+  wins arbitrarily; this check doesn't try to guess which one npm/yarn
+  would actually honor for an install. `yarn.lock` parsing is also
+  name-keyed like `package-lock.json`'s is: a real "diamond dependency"
+  case where two different specifiers legitimately resolve the same
+  package name to two different versions collapses to whichever one was
+  parsed last, so the other resolved version's CVEs (if any) aren't
+  checked — a pre-existing conflation this doesn't introduce, just doesn't
+  fix either. When none of that resolves a
   package to an exact version — a bare `package.json` with `^`/`~` ranges
-  and no `package-lock.json`, a `pyproject.toml` with no `poetry.lock`/
-  `Pipfile.lock` (its PEP 621 `[project.dependencies]` array is always a
-  range, never a resolved version), or a `requirements.txt` line that
-  isn't a plain `==` pin — `scanner/checks/transitive_deps.py` now does a
+  and no `package-lock.json`/`yarn.lock`, a `pyproject.toml` with no
+  `poetry.lock`/`Pipfile.lock` (its PEP 621 `[project.dependencies]` array
+  is always a range, never a resolved version), or a `requirements.txt`
+  line that isn't a plain `==` pin — `scanner/checks/transitive_deps.py`
+  now does a
   **best-effort** registry-metadata walk instead of giving up: for each
   direct dependency it queries the real npm registry or PyPI's JSON API
   for that package's latest published version and that version's own
@@ -146,12 +158,18 @@ places, and they carry different weight:
   An approval is scoped to the *exact* `tool_name` +
   `baseline_hash` + `current_hash` transition, not the tool name alone —
   a further, different edit to an already-approved tool produces a new
-  `current_hash` that doesn't match, and blocks again. This is still a
-  local, unsigned JSON file: it is NOT hash-chained or tamper-evident the
-  way `proxy/audit_log.py`'s log is (see below), so it records a local
-  trust decision made on this machine, not a durable, append-only claim
-  about who approved what — extending the audit log's hash chain to also
-  cover approvals was considered and deliberately left out of scope here.
+  `current_hash` that doesn't match, and blocks again. The approval
+  history now has the same hash-chain guarantee as the audit log (see
+  above): every approval is also appended to `policy/<slug>.jsonl`,
+  verifiable with `python -m proxy.verify_policy_log <path>`, catching
+  that file being edited, reordered, or truncated after the fact. What's
+  still NOT covered: `policy/<slug>.json` — the fast-lookup snapshot
+  `--block-on-drift` actually reads at startup — remains a plain
+  overwritten JSON file, not a chain, so a verified `.jsonl` history does
+  not by itself prove the `.json` snapshot hasn't been hand-edited to
+  disagree with it. `rebuild_snapshot_from_chain` reconstructs a snapshot
+  purely from the verified `.jsonl` so a human can diff it against the
+  actual `.json` on disk and catch exactly that kind of drift.
 - The dashboard aggregates whatever's on disk in `reports/`/`logs/` at
   build time — it has no live/push updates, it's a static snapshot
   regenerated on every push to `main`.

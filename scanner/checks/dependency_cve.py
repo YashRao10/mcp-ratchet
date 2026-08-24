@@ -1,6 +1,7 @@
 """Basic dependency CVE lookup via OSV.dev, when a target's manifest
-(requirements.txt, pyproject.toml, or package.json) is discoverable on
-disk.
+(requirements.txt, pyproject.toml, package.json, or a poetry.lock/
+Pipfile.lock/package-lock.json/yarn.lock next to one of those) is
+discoverable on disk.
 
 Explicitly the lowest-priority, least-differentiated check in this project
 — Cisco's MCP scanner already does this more thoroughly (pip-audit plus
@@ -200,6 +201,68 @@ def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
     return list(resolved.items())
 
 
+_YARN_VERSION_LINE = re.compile(r'^version\s+"?([^"\s]+)"?\s*$')
+
+
+def _split_yarn_spec(spec: str) -> tuple[str, str]:
+    """Split a yarn.lock header specifier like "@babel/code-frame@^7.0.0"
+    or "left-pad@1.3.0" into (name, range). Scoped packages start with an
+    "@" of their own, so the specifier's *own* range-separating "@" is the
+    second one in the string, not the first."""
+    spec = spec.strip().strip('"')
+    if not spec:
+        return "", ""
+    start = 1 if spec.startswith("@") else 0
+    idx = spec.find("@", start)
+    if idx == -1:
+        return spec, ""
+    return spec[:idx], spec[idx + 1 :]
+
+
+def parse_yarn_lock(path: Path) -> list[tuple[str, str]]:
+    """Classic Yarn v1 lockfile format — not JSON, not YAML, a bespoke
+    text format: unindented header lines list one or more comma-separated
+    "name@range" specifiers ending in `:`, followed by indented fields for
+    that resolved package, including `version "X.Y.Z"`. Every entry here
+    is a real resolved version, same guarantee package-lock.json gives on
+    the npm-with-npm side — this is the same gap for the npm-with-yarn
+    side: a bare package.json's `^`/`~` ranges are checkable exactly once
+    yarn.lock is what actually resolved them.
+
+    One known, honest limitation carried over from how package-lock.json
+    is already parsed here: the result is keyed by package name only, so
+    if yarn.lock legitimately resolved two different specifiers for the
+    same package name to two different versions (a real "diamond
+    dependency" case — e.g. `ms@2.0.0:` and `ms@^2.1.1:` as separate
+    blocks), only the last one encountered in file order survives in the
+    returned dict. That under-reports the other resolved version's CVEs
+    exactly the way parse_package_lock_json's name-keyed dict already can
+    for the same reason — not a new gap this parser introduces, just one
+    it doesn't fix either.
+    """
+    if not path.exists():
+        return []
+    resolved: dict[str, str] = {}
+    current_names: list[str] = []
+    for raw_line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if not raw_line.strip() or raw_line.startswith("#"):
+            continue
+        if not raw_line[0].isspace():
+            header = raw_line.strip().rstrip(":")
+            current_names = []
+            for spec in header.split(", "):
+                name, _ = _split_yarn_spec(spec)
+                if name:
+                    current_names.append(name)
+            continue
+        match = _YARN_VERSION_LINE.match(raw_line.strip())
+        if match and current_names:
+            version = match.group(1)
+            for name in current_names:
+                resolved[name] = version
+    return list(resolved.items())
+
+
 def find_manifest(root: Path) -> tuple[str, Path] | None:
     """Look one level for a lockfile or manifest near a target's launch
     script. Returns (ecosystem, path) or None.
@@ -218,6 +281,16 @@ def find_manifest(root: Path) -> tuple[str, Path] | None:
     lockfile guarantees. pyproject.toml sits last on the Python side: its
     `[project.dependencies]` array is PEP 621 ranges, never a resolved
     version, so it's only reached when nothing more resolved exists.
+
+    yarn.lock gets the same treatment as package-lock.json on the npm
+    ecosystem side — a project built with `yarn install` has no
+    package-lock.json at all, only a bare package.json (ranges) plus its
+    own yarn.lock (every direct and transitive dependency resolved). It's
+    checked ahead of a bare package.json for the same reason
+    package-lock.json is: it's the one that's actually resolved. If a repo
+    somehow has both package-lock.json and yarn.lock (a mid-migration
+    artifact, in practice), package-lock.json wins arbitrarily — this
+    check doesn't try to guess which one npm/yarn would actually honor.
     """
     for candidate, ecosystem in (
         (root / "poetry.lock", "poetry-lock"),
@@ -225,6 +298,7 @@ def find_manifest(root: Path) -> tuple[str, Path] | None:
         (root / "requirements.txt", "PyPI"),
         (root / "pyproject.toml", "pyproject"),
         (root / "package-lock.json", "npm-lock"),
+        (root / "yarn.lock", "yarn-lock"),
         (root / "package.json", "npm"),
     ):
         if candidate.exists():
@@ -281,6 +355,9 @@ def check_manifest_dir(root: Path) -> list[DependencyFinding]:
         osv_ecosystem = "PyPI"
     elif ecosystem == "npm-lock":
         exact_pinned = parse_package_lock_json(path)
+        osv_ecosystem = "npm"
+    elif ecosystem == "yarn-lock":
+        exact_pinned = parse_yarn_lock(path)
         osv_ecosystem = "npm"
     elif ecosystem == "PyPI":
         exact_pinned = parse_requirements_txt(path)
