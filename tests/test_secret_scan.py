@@ -49,3 +49,33 @@ def test_scan_source_tree_finds_real_planted_secret_in_toy_fixture():
     fixtures_dir = Path(__file__).resolve().parent / "fixtures"
     findings = scan_source_tree(fixtures_dir)
     assert any(f.pattern_name == "aws_access_key_id" for f in findings)
+
+
+def test_scan_source_tree_finds_secret_in_dotenv_file(tmp_path):
+    """Real bug found dogfooding: Path(".env").suffix == "" in pathlib
+    (a leading-dot filename with only one dot has no suffix at all), so a
+    literal `.env` file was silently never scanned even though ".env" was
+    already listed in _SCANNABLE_SUFFIXES. A .env file is the single most
+    likely place a real MCP server target actually keeps a live secret."""
+    (tmp_path / ".env").write_text("AWS_ACCESS_KEY_ID=AKIAABCDEFGHIJKLMNOP\n")
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "aws_access_key_id" for f in findings)
+
+
+def test_scan_source_tree_finds_secret_in_dotenv_variant_file(tmp_path):
+    """Same bug, different shape: Path(".env.local").suffix == ".local",
+    not ".env", so environment-specific dotenv variants (.env.local,
+    .env.production, etc.) were also silently skipped."""
+    (tmp_path / ".env.production").write_text(
+        'api_key = "sk-thisisareallylongfakeapikeyvalue1234"\n'
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "generic_api_key_assignment" for f in findings)
+
+
+def test_scan_source_tree_still_skips_dotenv_lookalike_with_no_secret(tmp_path):
+    """Negative control: a dotenv file that happens to be clean shouldn't
+    produce a finding just because it's now scanned."""
+    (tmp_path / ".env").write_text("APP_NAME=my-app\n")
+    findings = scan_source_tree(tmp_path)
+    assert findings == []

@@ -76,6 +76,31 @@ _SKIP_DIR_NAMES = {"node_modules", "__pycache__", ".git", "venv", ".venv", "dist
 _SCANNABLE_SUFFIXES = {".py", ".js", ".ts", ".mjs", ".cjs", ".json", ".env", ".yaml", ".yml", ".toml"}
 
 
+def _is_scannable(path: Path) -> bool:
+    """Whether scan_source_tree should read this file.
+
+    `Path.suffix` was never actually catching dotenv files, despite ".env"
+    sitting right there in _SCANNABLE_SUFFIXES: pathlib treats a leading dot
+    as part of the stem for a file with only one dot in its name, so
+    `Path(".env").suffix == ""`, not ".env" — and a variant like
+    ".env.local" or ".env.production" has a suffix of ".local"/".production"
+    instead. The net effect was that a literal `.env` file sitting right next
+    to a target's launch script — the single most common place a real
+    ANTHROPIC_API_KEY, bearer token, or DB password actually lives for an
+    MCP server — was silently never scanned, with no error and no indication
+    in the report that it had been skipped. Found dogfooding this check
+    against a target with a real `.env` file present.
+
+    Fixed by checking the filename directly for the dotenv family ahead of
+    the suffix check, rather than trying to coerce pathlib's suffix
+    semantics into matching it.
+    """
+    name = path.name
+    if name == ".env" or name.startswith(".env."):
+        return True
+    return path.suffix in _SCANNABLE_SUFFIXES
+
+
 def scan_source_tree(root: Path, max_files: int = 500) -> list[SecretFinding]:
     """Walk a target server's source tree (if we have a real filesystem
     path for it — a local stdio launch command's script directory) and
@@ -94,7 +119,7 @@ def scan_source_tree(root: Path, max_files: int = 500) -> list[SecretFinding]:
             continue
         if not path.is_file():
             continue
-        if path.suffix not in _SCANNABLE_SUFFIXES:
+        if not _is_scannable(path):
             continue
         findings.extend(scan_file(path))
         scanned += 1

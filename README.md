@@ -56,6 +56,25 @@ places, and they carry different weight:
 - No Docker-sandboxed dynamic execution to observe real runtime behavior,
   unlike Snyk's.
 - No certification or trust-tier scoring, unlike mpak.dev.
+- `secret_scan.py` only reads a fixed, small set of file suffixes
+  (`.py`, `.js`, `.ts`, `.mjs`, `.cjs`, `.json`, `.env`, `.yaml`, `.yml`,
+  `.toml`), capped at 500 files per target — it does not attempt to sniff
+  arbitrary binary/text content, and it only ever sees a local stdio
+  target's on-disk source tree at all (a remote HTTP target has no
+  filesystem this scanner can reach). Until this round, the `.env` entry
+  in that suffix list never actually did anything: `Path(".env").suffix`
+  is `""` in Python's pathlib (a filename with exactly one dot treats
+  everything before it as the stem, not the suffix), so a literal `.env`
+  file — the single most likely place a real MCP server target keeps a
+  live secret — was silently skipped every time, and a variant like
+  `.env.local` or `.env.production` fared no better (`.suffix` there is
+  `.local`/`.production`, matching nothing in the list either). Found
+  dogfooding this check against a target with a real `.env` file present.
+  Fixed by checking the filename directly for the dotenv family
+  (`name == ".env"` or `name.startswith(".env.")`) ahead of the suffix
+  check, in `_is_scannable`. Still not covered: any other extensionless
+  config file (a bare `Dockerfile`, a `Procfile`, etc.) that isn't part of
+  the dotenv family specifically.
 - `scanner/scan_batch.py` scans a list of your own already-known targets
   in one run (`python -m scanner.scan_batch --config targets.json`),
   writing each target's usual per-target report plus one aggregate batch
