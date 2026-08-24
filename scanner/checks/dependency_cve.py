@@ -162,6 +162,15 @@ def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
     under each direct dependency's own "dependencies" key) for older
     lockfiles. Either way, every entry here has a single concrete version —
     that's what makes a lockfile checkable where a bare manifest isn't.
+
+    Returns every distinct (name, version) pair actually present in the
+    lockfile, not one entry per name — a real "diamond dependency" (two
+    different specifiers legitimately resolving the same package name to
+    two different versions, e.g. a nested `node_modules/foo/node_modules/qs`
+    at a different version than the top-level `node_modules/qs`) is common
+    in npm's nested-node_modules resolution and both versions are kept, so
+    both get checked against OSV.dev independently instead of one silently
+    shadowing the other.
     """
     if not path.exists():
         return []
@@ -172,7 +181,14 @@ def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
     except (OSError, ValueError):
         return []
 
-    resolved: dict[str, str] = {}
+    resolved: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+
+    def _add(name: str, version: str) -> None:
+        key = (name, version)
+        if key not in seen:
+            seen.add(key)
+            resolved.append(key)
 
     packages = data.get("packages")
     if isinstance(packages, dict):
@@ -184,7 +200,7 @@ def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
             name = key.rsplit("node_modules/", 1)[-1]
             version = entry.get("version")
             if name and version:
-                resolved[name] = version
+                _add(name, version)
     else:
         # v1 fallback: a recursive "dependencies" tree.
         def _walk(deps: dict) -> None:
@@ -193,12 +209,12 @@ def parse_package_lock_json(path: Path) -> list[tuple[str, str]]:
                     continue
                 version = entry.get("version")
                 if version:
-                    resolved[name] = version
+                    _add(name, version)
                 _walk(entry.get("dependencies") or {})
 
         _walk(data.get("dependencies") or {})
 
-    return list(resolved.items())
+    return resolved
 
 
 _YARN_VERSION_LINE = re.compile(r'^version\s+"?([^"\s]+)"?\s*$')
@@ -229,20 +245,22 @@ def parse_yarn_lock(path: Path) -> list[tuple[str, str]]:
     side: a bare package.json's `^`/`~` ranges are checkable exactly once
     yarn.lock is what actually resolved them.
 
-    One known, honest limitation carried over from how package-lock.json
-    is already parsed here: the result is keyed by package name only, so
-    if yarn.lock legitimately resolved two different specifiers for the
-    same package name to two different versions (a real "diamond
-    dependency" case — e.g. `ms@2.0.0:` and `ms@^2.1.1:` as separate
-    blocks), only the last one encountered in file order survives in the
-    returned dict. That under-reports the other resolved version's CVEs
-    exactly the way parse_package_lock_json's name-keyed dict already can
-    for the same reason — not a new gap this parser introduces, just one
-    it doesn't fix either.
+    Returns every distinct (name, version) pair actually present in the
+    lockfile, not one entry per name — a real "diamond dependency" (two
+    different specifiers legitimately resolving the same package name to
+    two different versions, e.g. `ms@2.0.0:` and `ms@^2.1.1:` as separate
+    header blocks each with their own `version` field) is kept as two
+    separate entries here, so both get checked against OSV.dev instead of
+    one silently shadowing the other in a name-keyed dict. Two specifiers
+    resolving to the *same* version (the common case — yarn dedupes when
+    it can, e.g. `ms@2.0.0, ms@2.1.2:` sharing one `version` field) still
+    collapse to a single entry, since there's only one real version there
+    to check.
     """
     if not path.exists():
         return []
-    resolved: dict[str, str] = {}
+    resolved: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
     current_names: list[str] = []
     for raw_line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         if not raw_line.strip() or raw_line.startswith("#"):
@@ -259,8 +277,11 @@ def parse_yarn_lock(path: Path) -> list[tuple[str, str]]:
         if match and current_names:
             version = match.group(1)
             for name in current_names:
-                resolved[name] = version
-    return list(resolved.items())
+                key = (name, version)
+                if key not in seen:
+                    seen.add(key)
+                    resolved.append(key)
+    return resolved
 
 
 def find_manifest(root: Path) -> tuple[str, Path] | None:

@@ -104,13 +104,16 @@ places, and they carry different weight:
   parsed here), then `package.json`. If both `package-lock.json` and
   `yarn.lock` exist (a migration artifact, in practice), `package-lock.json`
   wins arbitrarily; this check doesn't try to guess which one npm/yarn
-  would actually honor for an install. `yarn.lock` parsing is also
-  name-keyed like `package-lock.json`'s is: a real "diamond dependency"
-  case where two different specifiers legitimately resolve the same
-  package name to two different versions collapses to whichever one was
-  parsed last, so the other resolved version's CVEs (if any) aren't
-  checked — a pre-existing conflation this doesn't introduce, just doesn't
-  fix either. When none of that resolves a
+  would actually honor for an install. Both lockfile parsers (`package-lock.json`
+  and `yarn.lock`) used to be name-keyed: a real "diamond dependency" case
+  where two different specifiers legitimately resolve the same package
+  name to two different versions collapsed to whichever one was parsed
+  last, silently dropping the other resolved version's CVEs. Fixed this
+  round — both parsers now return every distinct `(name, version)` pair
+  actually present in the lockfile (deduped only on the exact pair, so two
+  specifiers resolving to the *same* version still collapse to one entry,
+  but two that resolve to genuinely different versions are both kept and
+  both queried against OSV.dev independently). When none of that resolves a
   package to an exact version — a bare `package.json` with `^`/`~` ranges
   and no `package-lock.json`/`yarn.lock`, a `pyproject.toml` with no
   `poetry.lock`/`Pipfile.lock` (its PEP 621 `[project.dependencies]` array

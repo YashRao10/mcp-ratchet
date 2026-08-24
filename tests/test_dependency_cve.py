@@ -93,6 +93,44 @@ def test_parse_package_lock_json_v1_walks_nested_dependencies_tree(tmp_path):
     assert resolved == {"express": "4.18.2", "qs": "6.11.0", "left-pad": "1.3.0"}
 
 
+def test_parse_package_lock_json_keeps_both_versions_of_a_diamond_dependency(tmp_path):
+    """A real diamond dependency: two different specifiers resolve the
+    same package name ("qs") to two different versions, nested under two
+    different parents. Both must survive — collapsing to a name-keyed dict
+    would silently drop one version's CVEs."""
+    lock = tmp_path / "package-lock.json"
+    lock.write_text(
+        """{
+        "packages": {
+            "": {"name": "root-project", "version": "1.0.0"},
+            "node_modules/qs": {"version": "6.5.2"},
+            "node_modules/express/node_modules/qs": {"version": "6.11.0"}
+        }
+        }""",
+        encoding="utf-8",
+    )
+    resolved = dc.parse_package_lock_json(lock)
+    assert set(resolved) == {("qs", "6.5.2"), ("qs", "6.11.0")}
+
+
+def test_parse_package_lock_json_dedupes_identical_name_version_pairs(tmp_path):
+    """The same package resolving to the same version at two different
+    nested paths is the common case, not a diamond -- it should collapse
+    to one entry, not one OSV query per occurrence."""
+    lock = tmp_path / "package-lock.json"
+    lock.write_text(
+        """{
+        "packages": {
+            "node_modules/qs": {"version": "6.5.2"},
+            "node_modules/express/node_modules/qs": {"version": "6.5.2"}
+        }
+        }""",
+        encoding="utf-8",
+    )
+    resolved = dc.parse_package_lock_json(lock)
+    assert resolved == [("qs", "6.5.2")]
+
+
 def test_parse_package_lock_json_missing_or_malformed_returns_empty(tmp_path):
     assert dc.parse_package_lock_json(tmp_path / "nope.json") == []
     bad = tmp_path / "package-lock.json"
@@ -285,6 +323,39 @@ def test_check_manifest_dir_reports_vulnerable_pin_from_lockfile(tmp_path, monke
     assert findings[0].vulnerability_ids == ["GHSA-hpx4-r86g-5jrg"]
 
 
+def test_check_manifest_dir_reports_both_versions_of_a_diamond_dependency(tmp_path, monkeypatch):
+    """Integration proof of the diamond-dependency fix: a lockfile with the
+    same package name resolved to two different versions must produce two
+    separate findings, one per version, each checked against OSV.dev on
+    its own -- not one version silently shadowing the other."""
+    lock = tmp_path / "package-lock.json"
+    lock.write_text(
+        """{
+        "packages": {
+            "node_modules/qs": {"version": "6.5.2"},
+            "node_modules/express/node_modules/qs": {"version": "6.11.0"}
+        }
+        }""",
+        encoding="utf-8",
+    )
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "qs" and version == "6.5.2":
+            return ["GHSA-old-qs"]
+        if package_name == "qs" and version == "6.11.0":
+            return ["GHSA-new-qs"]
+        return []
+
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    by_version = {f.version: f for f in findings}
+    assert len(findings) == 2
+    assert by_version["6.5.2"].vulnerability_ids == ["GHSA-old-qs"]
+    assert by_version["6.11.0"].vulnerability_ids == ["GHSA-new-qs"]
+    assert all(f.package_name == "qs" and f.resolution == "exact" for f in findings)
+
+
 def test_check_manifest_dir_returns_empty_when_no_manifest_present(tmp_path):
     assert dc.check_manifest_dir(tmp_path) == []
 
@@ -453,6 +524,53 @@ def test_parse_yarn_lock_multiple_specifiers_share_one_resolved_version(tmp_path
     )
     resolved = dict(dc.parse_yarn_lock(lock))
     assert resolved == {"ms": "2.1.2"}
+
+
+def test_parse_yarn_lock_keeps_both_versions_of_a_diamond_dependency(tmp_path):
+    """Two separate header blocks for the same package name, each pinned
+    to a genuinely different resolved version -- a real diamond dependency,
+    not the "multiple specifiers share one version" dedup case above. Both
+    versions must survive so both get checked against OSV.dev."""
+    lock = tmp_path / "yarn.lock"
+    lock.write_text(
+        'ms@2.0.0:\n'
+        '  version "2.0.0"\n'
+        '  resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#test"\n'
+        '\n'
+        'ms@^2.1.1:\n'
+        '  version "2.1.3"\n'
+        '  resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#test"\n',
+        encoding="utf-8",
+    )
+    resolved = dc.parse_yarn_lock(lock)
+    assert set(resolved) == {("ms", "2.0.0"), ("ms", "2.1.3")}
+
+
+def test_check_manifest_dir_reports_both_versions_of_a_yarn_diamond_dependency(tmp_path, monkeypatch):
+    lock = tmp_path / "yarn.lock"
+    lock.write_text(
+        'ms@2.0.0:\n'
+        '  version "2.0.0"\n'
+        '\n'
+        'ms@^2.1.1:\n'
+        '  version "2.1.3"\n',
+        encoding="utf-8",
+    )
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "ms" and version == "2.0.0":
+            return ["GHSA-old-ms"]
+        if package_name == "ms" and version == "2.1.3":
+            return ["GHSA-new-ms"]
+        return []
+
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    by_version = {f.version: f for f in findings}
+    assert len(findings) == 2
+    assert by_version["2.0.0"].vulnerability_ids == ["GHSA-old-ms"]
+    assert by_version["2.1.3"].vulnerability_ids == ["GHSA-new-ms"]
 
 
 def test_parse_yarn_lock_missing_file_returns_empty(tmp_path):
