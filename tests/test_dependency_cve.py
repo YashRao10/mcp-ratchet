@@ -11,6 +11,7 @@ call succeeding.
 from __future__ import annotations
 
 from scanner.checks import dependency_cve as dc
+from scanner.checks import transitive_deps as td
 
 
 def test_parse_requirements_txt_only_keeps_exact_pins(tmp_path):
@@ -286,3 +287,119 @@ def test_check_manifest_dir_reports_vulnerable_pin_from_lockfile(tmp_path, monke
 
 def test_check_manifest_dir_returns_empty_when_no_manifest_present(tmp_path):
     assert dc.check_manifest_dir(tmp_path) == []
+
+
+def test_check_manifest_dir_marks_lockfile_findings_as_exact(tmp_path, monkeypatch):
+    lock = tmp_path / "poetry.lock"
+    lock.write_text('[[package]]\nname = "jinja2"\nversion = "2.4.1"\n', encoding="utf-8")
+
+    monkeypatch.setattr(dc, "_query_osv", lambda name, version, ecosystem, client: ["GHSA-x"])
+
+    findings = dc.check_manifest_dir(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].resolution == "exact"
+
+
+def test_check_manifest_dir_bare_package_json_resolves_ranges_best_effort(tmp_path, monkeypatch):
+    """No package-lock.json next to it -- express's "^4.18.0" range can't
+    be checked directly, so it goes through transitive_deps.py's
+    registry walk instead, and shows up tagged best-effort-transitive."""
+    pkg = tmp_path / "package.json"
+    pkg.write_text(
+        '{"dependencies": {"left-pad": "1.3.0", "express": "^4.18.0"}}',
+        encoding="utf-8",
+    )
+
+    def fake_query_npm_registry(package_name, client):
+        if package_name == "express":
+            return {"dist-tags": {"latest": "4.18.2"}, "versions": {"4.18.2": {"dependencies": {}}}}
+        return None
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "express" and version == "4.18.2":
+            return ["GHSA-express"]
+        return []
+
+    monkeypatch.setattr(td, "_query_npm_registry", fake_query_npm_registry)
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    # left-pad is an exact pin but not vulnerable in this fake OSV, so it
+    # never produces a finding -- only express's best-effort resolution does.
+    assert len(findings) == 1
+    assert findings[0].package_name == "express"
+    assert findings[0].version == "4.18.2"
+    assert findings[0].ecosystem == "npm"
+    assert findings[0].resolution == "best-effort-transitive"
+
+
+def test_check_manifest_dir_bare_pyproject_toml_resolves_best_effort(tmp_path, monkeypatch):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        '[project]\nname = "demo"\ndependencies = ["jinja2>=2.0"]\n',
+        encoding="utf-8",
+    )
+
+    def fake_query_pypi_metadata(package_name, client):
+        if package_name == "jinja2":
+            return {"info": {"version": "2.4.1", "requires_dist": []}}
+        return None
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "jinja2" and version == "2.4.1":
+            return ["GHSA-462w-v97r-4m45"]
+        return []
+
+    monkeypatch.setattr(td, "_query_pypi_metadata", fake_query_pypi_metadata)
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].package_name == "jinja2"
+    assert findings[0].version == "2.4.1"
+    assert findings[0].ecosystem == "PyPI"
+    assert findings[0].resolution == "best-effort-transitive"
+
+
+def test_check_manifest_dir_requirements_txt_with_ranges_resolves_best_effort(tmp_path, monkeypatch):
+    """requirements.txt with a mix: an exact pin (checked directly,
+    tagged exact) and a range (resolved through the registry walk,
+    tagged best-effort-transitive)."""
+    reqs = tmp_path / "requirements.txt"
+    reqs.write_text("pydantic==2.9.2\njinja2>=2.0\n", encoding="utf-8")
+
+    def fake_query_pypi_metadata(package_name, client):
+        if package_name == "jinja2":
+            return {"info": {"version": "2.4.1", "requires_dist": []}}
+        return None
+
+    def fake_query_osv(package_name, version, ecosystem, client):
+        if package_name == "jinja2" and version == "2.4.1":
+            return ["GHSA-462w-v97r-4m45"]
+        if package_name == "pydantic" and version == "2.9.2":
+            return ["GHSA-pydantic-fake"]
+        return []
+
+    monkeypatch.setattr(td, "_query_pypi_metadata", fake_query_pypi_metadata)
+    monkeypatch.setattr(dc, "_query_osv", fake_query_osv)
+
+    findings = dc.check_manifest_dir(tmp_path)
+    by_name = {f.package_name: f for f in findings}
+    assert by_name["pydantic"].resolution == "exact"
+    assert by_name["jinja2"].resolution == "best-effort-transitive"
+    assert by_name["jinja2"].version == "2.4.1"
+
+
+def test_find_manifest_pyproject_toml_only_reached_without_lockfile_or_requirements(tmp_path):
+    (tmp_path / "pyproject.toml").write_text('[project]\ndependencies = []\n', encoding="utf-8")
+    ecosystem, path = dc.find_manifest(tmp_path)
+    assert ecosystem == "pyproject"
+    assert path.name == "pyproject.toml"
+
+
+def test_find_manifest_prefers_requirements_txt_over_pyproject_toml(tmp_path):
+    (tmp_path / "requirements.txt").write_text("httpx==0.27.0\n", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text('[project]\ndependencies = []\n', encoding="utf-8")
+    ecosystem, path = dc.find_manifest(tmp_path)
+    assert ecosystem == "PyPI"
+    assert path.name == "requirements.txt"

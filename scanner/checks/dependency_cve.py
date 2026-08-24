@@ -1,5 +1,6 @@
 """Basic dependency CVE lookup via OSV.dev, when a target's manifest
-(requirements.txt or package.json) is discoverable on disk.
+(requirements.txt, pyproject.toml, or package.json) is discoverable on
+disk.
 
 Explicitly the lowest-priority, least-differentiated check in this project
 — Cisco's MCP scanner already does this more thoroughly (pip-audit plus
@@ -7,6 +8,13 @@ VirusTotal plus sandboxed behavior). This exists so mcp-ratchet's report
 isn't silent on a commodity-obvious risk class, not as a claim of
 comprehensive SBOM/CVE coverage. See README's "what this does NOT do"
 section.
+
+Every finding carries a `resolution` of either "exact" (came from a
+lockfile or an exact `==`/pinned version — a real, single, resolvable
+version) or "best-effort-transitive" (came from transitive_deps.py's
+registry-metadata walk for a bare manifest with no lockfile — an
+approximation, not a guarantee; see that module's docstring for exactly
+what "best-effort" does and doesn't mean here).
 """
 
 from __future__ import annotations
@@ -16,6 +24,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import httpx
+
+from scanner.checks import transitive_deps
 
 OSV_QUERY_URL = "https://api.osv.dev/v1/query"
 _REQUEST_TIMEOUT_SECONDS = 10
@@ -27,6 +37,11 @@ class DependencyFinding:
     version: str | None
     ecosystem: str
     vulnerability_ids: list[str] = field(default_factory=list)
+    # "exact": from a lockfile or an exact pin — a real resolved version.
+    # "best-effort-transitive": from transitive_deps.py's registry-metadata
+    # walk of a bare manifest with no lockfile — an approximation, see
+    # that module's docstring for what it can over/under-report.
+    resolution: str = "exact"
 
     def to_dict(self) -> dict:
         return {
@@ -34,6 +49,7 @@ class DependencyFinding:
             "version": self.version,
             "ecosystem": self.ecosystem,
             "vulnerability_ids": self.vulnerability_ids,
+            "resolution": self.resolution,
         }
 
 
@@ -192,18 +208,22 @@ def find_manifest(root: Path) -> tuple[str, Path] | None:
     exist: package-lock.json gives every transitive dependency a single
     resolved version, where package.json alone only has direct
     dependencies and often a version *range* the CVE check can't act on
-    (see check_manifest_dir's ecosystem dispatch below for how the two
-    parse differently). poetry.lock and Pipfile.lock get the same
-    priority treatment on the Python side, ahead of a bare
-    requirements.txt — a project managed by Poetry or Pipenv may not even
+    directly (see check_manifest_dir's ecosystem dispatch below for how
+    the two parse differently, and transitive_deps.py for what happens to
+    those ranges now). poetry.lock and Pipfile.lock get the same priority
+    treatment on the Python side, ahead of requirements.txt, ahead of
+    pyproject.toml — a project managed by Poetry or Pipenv may not even
     have a requirements.txt, and when it does, it's often only the direct
     deps a human bothered to freeze, not the full resolved graph a
-    lockfile guarantees.
+    lockfile guarantees. pyproject.toml sits last on the Python side: its
+    `[project.dependencies]` array is PEP 621 ranges, never a resolved
+    version, so it's only reached when nothing more resolved exists.
     """
     for candidate, ecosystem in (
         (root / "poetry.lock", "poetry-lock"),
         (root / "Pipfile.lock", "pipenv-lock"),
         (root / "requirements.txt", "PyPI"),
+        (root / "pyproject.toml", "pyproject"),
         (root / "package-lock.json", "npm-lock"),
         (root / "package.json", "npm"),
     ):
@@ -228,45 +248,70 @@ def _query_osv(package_name: str, version: str, ecosystem: str, client: httpx.Cl
 
 
 def check_manifest_dir(root: Path) -> list[DependencyFinding]:
-    """Find + check whatever pinned manifest is discoverable at `root`.
+    """Find + check whatever manifest is discoverable at `root`.
 
-    Any network failure degrades to an empty result for that package
-    (fail-open on the network, not fail-open on reporting — a package OSV
-    couldn't be reached for simply doesn't appear as a finding, it isn't
-    reported as "clean").
+    Two disjoint sets of dependencies can come out of this:
+    - `exact` — a lockfile entry or an exact (`==`/pinned) manifest entry.
+      A real, resolvable version; checked against OSV.dev directly.
+    - `best-effort-transitive` — everything left over from a bare
+      manifest with no lockfile (a `^`/`~`/ranged package.json entry, or
+      anything from pyproject.toml/requirements.txt-with-ranges), walked
+      out through transitive_deps.py's registry-metadata resolver. See
+      that module's docstring for exactly what this guarantees and what
+      it doesn't — it is never a real dependency solve.
+
+    Any network failure (OSV.dev or the registry walk) degrades to an
+    empty result for that package (fail-open on the network, not fail-open
+    on reporting — a package that couldn't be reached simply doesn't
+    appear as a finding, it isn't reported as "clean").
     """
     manifest = find_manifest(root)
     if manifest is None:
         return []
 
     ecosystem, path = manifest
-    if ecosystem == "PyPI":
-        pinned = parse_requirements_txt(path)
-    elif ecosystem == "poetry-lock":
-        pinned = parse_poetry_lock(path)
-    elif ecosystem == "pipenv-lock":
-        pinned = parse_pipfile_lock(path)
-    elif ecosystem == "npm-lock":
-        pinned = parse_package_lock_json(path)
-    else:
-        pinned = parse_package_json(path)
-    if not pinned:
-        return []
+    exact_pinned: list[tuple[str, str]] = []
+    best_effort_ranges: list[tuple[str, str]] = []
 
-    # "npm-lock"/"poetry-lock"/"pipenv-lock" are this check's own tags for
-    # "came from a lockfile, so every version here is fully resolved,
-    # including transitive deps" — OSV.dev itself only knows the real
-    # ecosystem name (PyPI or npm).
-    if ecosystem in ("poetry-lock", "pipenv-lock"):
+    if ecosystem == "poetry-lock":
+        exact_pinned = parse_poetry_lock(path)
+        osv_ecosystem = "PyPI"
+    elif ecosystem == "pipenv-lock":
+        exact_pinned = parse_pipfile_lock(path)
         osv_ecosystem = "PyPI"
     elif ecosystem == "npm-lock":
+        exact_pinned = parse_package_lock_json(path)
         osv_ecosystem = "npm"
-    else:
-        osv_ecosystem = ecosystem
+    elif ecosystem == "PyPI":
+        exact_pinned = parse_requirements_txt(path)
+        exact_names = {name for name, _ in exact_pinned}
+        best_effort_ranges = [
+            (name, spec)
+            for name, spec in transitive_deps.parse_requirements_txt_ranges(path)
+            if name not in exact_names
+        ]
+        osv_ecosystem = "PyPI"
+    elif ecosystem == "pyproject":
+        # PEP 621 [project.dependencies] is always a range, never a
+        # resolved version — nothing here is ever "exact".
+        best_effort_ranges = transitive_deps.parse_pyproject_toml_dependencies(path)
+        osv_ecosystem = "PyPI"
+    else:  # "npm" — bare package.json, no package-lock.json
+        exact_pinned = parse_package_json(path)
+        exact_names = {name for name, _ in exact_pinned}
+        best_effort_ranges = [
+            (name, spec)
+            for name, spec in transitive_deps.parse_package_json_dependency_ranges(path)
+            if name not in exact_names
+        ]
+        osv_ecosystem = "npm"
+
+    if not exact_pinned and not best_effort_ranges:
+        return []
 
     findings: list[DependencyFinding] = []
     with httpx.Client() as client:
-        for name, version in pinned:
+        for name, version in exact_pinned:
             vuln_ids = _query_osv(name, version, osv_ecosystem, client)
             if vuln_ids:
                 findings.append(
@@ -275,6 +320,26 @@ def check_manifest_dir(root: Path) -> list[DependencyFinding]:
                         version=version,
                         ecosystem=osv_ecosystem,
                         vulnerability_ids=vuln_ids,
+                        resolution="exact",
                     )
                 )
+
+        if best_effort_ranges:
+            if osv_ecosystem == "npm":
+                resolved = transitive_deps.resolve_npm_transitive(best_effort_ranges, client)
+            else:
+                resolved = transitive_deps.resolve_pypi_transitive(best_effort_ranges, client)
+            for name, version in resolved:
+                vuln_ids = _query_osv(name, version, osv_ecosystem, client)
+                if vuln_ids:
+                    findings.append(
+                        DependencyFinding(
+                            package_name=name,
+                            version=version,
+                            ecosystem=osv_ecosystem,
+                            vulnerability_ids=vuln_ids,
+                            resolution="best-effort-transitive",
+                        )
+                    )
+
     return findings

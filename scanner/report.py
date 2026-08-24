@@ -129,6 +129,7 @@ def render_html(result: ScanResult) -> str:
             escape(dep["package_name"]),
             escape(dep["version"] or ""),
             escape(dep["ecosystem"]),
+            escape(dep.get("resolution", "exact")),
             escape(", ".join(dep["vulnerability_ids"])),
         )
         for dep in d["dependency_findings"]
@@ -168,9 +169,13 @@ code{{font-family:monospace;color:#5cc2b8;}}
 {secret_rows or '<tr><td colspan="4">No secrets found.</td></tr>'}
 </table>
 
-<h2>Dependency CVEs (OSV.dev, pinned versions only)</h2>
-<table><tr><th>Package</th><th>Version</th><th>Ecosystem</th><th>Vulnerability IDs</th></tr>
-{dependency_rows or '<tr><td colspan="4">No dependency findings.</td></tr>'}
+<h2>Dependency CVEs (OSV.dev)</h2>
+<p style="font-size:13px;color:#9aa5a3;">"exact" resolution came from a lockfile or an exact pin — a real
+resolved version. "best-effort-transitive" came from a bare manifest with
+no lockfile, walked via registry metadata — an approximation, not a
+guaranteed install set. See README's "what this does NOT do" section.</p>
+<table><tr><th>Package</th><th>Version</th><th>Ecosystem</th><th>Resolution</th><th>Vulnerability IDs</th></tr>
+{dependency_rows or '<tr><td colspan="5">No dependency findings.</td></tr>'}
 </table>
 
 </body></html>

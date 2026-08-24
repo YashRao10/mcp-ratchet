@@ -82,12 +82,34 @@ places, and they carry different weight:
   lockfile over its corresponding bare manifest whenever both exist (a
   lockfile resolves every version, direct **and** transitive, rather than
   leaving it as a `^`/`~`/unpinned range): `poetry.lock`, `Pipfile.lock`,
-  `requirements.txt` (also handles pip-compile's `\`-continued/`--hash=`
-  output, not just a plain pin list), npm's `package-lock.json`, then
-  `package.json`. There's still no transitive-dependency resolution for a
-  bare `package.json`/`pyproject.toml` without an accompanying lockfile —
-  that's a real gap for direct-manifest-only projects, not a claim that
-  every ecosystem is fully covered.
+  `requirements.txt`, `pyproject.toml` (also handles pip-compile's
+  `\`-continued/`--hash=` output, not just a plain pin list), npm's
+  `package-lock.json`, then `package.json`. When none of that resolves a
+  package to an exact version — a bare `package.json` with `^`/`~` ranges
+  and no `package-lock.json`, a `pyproject.toml` with no `poetry.lock`/
+  `Pipfile.lock` (its PEP 621 `[project.dependencies]` array is always a
+  range, never a resolved version), or a `requirements.txt` line that
+  isn't a plain `==` pin — `scanner/checks/transitive_deps.py` now does a
+  **best-effort** registry-metadata walk instead of giving up: for each
+  direct dependency it queries the real npm registry or PyPI's JSON API
+  for that package's latest published version and that version's own
+  declared dependencies, and walks outward up to `MAX_TRANSITIVE_DEPTH`
+  (2) hops, with a visited-set guard so a circular dependency reference
+  can't infinite-loop it. This is explicitly **not** a real dependency
+  solve — no pip/npm/poetry-grade constraint-graph resolution, no
+  conflict resolution across sibling requirements, no backtracking. It
+  picks "latest" as its candidate version for every package it walks,
+  which is not necessarily what a real installer would pick given the
+  full constraint graph, so it can both over-report (packages a real
+  resolver would never select because a sibling constraint ruled them
+  out) and under-report (a real resolver sometimes picks an older version
+  to satisfy a shared constraint, and that older version can carry an
+  entirely different dependency set). Every `DependencyFinding` this check
+  produces now carries a `resolution` field — `"exact"` for a lockfile
+  entry or an exact pin, `"best-effort-transitive"` for anything that
+  came out of this walk — so a report reader can tell at a glance which
+  guarantee applies to which finding; the HTML report surfaces this as
+  its own column, not a footnote.
 - The proxy monitors by default and never blocks a call on its own —
   `--block-on-drift` (opt-in, off unless passed) refuses a call to any
   tool currently believed to have drifted from baseline (added, or an
@@ -212,7 +234,10 @@ scanner/            Layer 1 — static analyzer
   connect.py          MCP client: stdio or HTTP, enumerate a target's tools
   fingerprint.py       Canonical per-tool + whole-server hashing
   checks/               prompt_injection.py, permission_mismatch.py,
-                         secret_scan.py, dependency_cve.py
+                         secret_scan.py, dependency_cve.py,
+                         transitive_deps.py (best-effort registry-walk
+                         resolver dependency_cve.py falls back to for a
+                         bare manifest with no lockfile)
   report.py             Assembles + renders JSON/HTML
   run_scan.py            CLI entrypoint
   scan_batch.py           CLI entrypoint: scan a list of your own targets in one run
