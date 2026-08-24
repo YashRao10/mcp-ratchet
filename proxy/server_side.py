@@ -22,6 +22,7 @@ from proxy import forward
 from proxy.audit_log import AuditLogWriter
 from proxy.client_side import DownstreamClient
 from proxy.drift import DRIFT_TOOL_REMOVED, diff_against_baseline
+from proxy.policy import PolicyStore
 from scanner.fingerprint import ServerFingerprint
 
 
@@ -31,6 +32,7 @@ def build_proxy_server(
     audit_log: AuditLogWriter,
     server_name: str = "mcp-ratchet-proxy",
     block_on_drift: bool = False,
+    policy_store: PolicyStore | None = None,
 ) -> Server:
     """Construct the low-level Server that fronts `downstream`.
 
@@ -51,6 +53,17 @@ def build_proxy_server(
     for the same principle applied elsewhere). A tool removed from
     baseline is not tracked here for blocking purposes: downstream will
     already reject a call to a tool it no longer declares.
+
+    `policy_store` (optional; see proxy/policy.py) holds drift transitions a
+    human has already reviewed and durably approved, keyed to the exact
+    tool_name+baseline_hash+current_hash transition — not just the tool
+    name, so a *further* drift on an already-approved tool blocks again. A
+    drift event this session that matches an approved entry is excluded
+    from blocking here, but it is still logged via audit_log.drift_event()
+    below exactly as before: approval never erases or suppresses the drift
+    record itself, only whether a call is refused. When policy_store is
+    None (or empty), behavior is unchanged from before this feature
+    existed — every currently-drifted tool blocks.
     """
     drifted_tool_names: set[str] = set()
 
@@ -75,8 +88,14 @@ def build_proxy_server(
                 audit_log.drift_event(event)
             # Replaces, not accumulates: reflects what's drifted as of this
             # latest list, not every drift ever seen across the session.
+            # A drift event matching an approved policy_store entry is
+            # excluded here — it was still logged above unconditionally,
+            # it just doesn't contribute to blocking.
             drifted_tool_names = {
-                event.tool_name for event in drift_events if event.drift_type != DRIFT_TOOL_REMOVED
+                event.tool_name
+                for event in drift_events
+                if event.drift_type != DRIFT_TOOL_REMOVED
+                and not (policy_store is not None and policy_store.is_approved(event))
             }
 
         # Transparency requirement: forward the real tools/list result
@@ -98,7 +117,9 @@ def build_proxy_server(
                 f"Tool '{params.name}' has drifted from its baseline fingerprint "
                 "(added or changed since the last approved scan) and this proxy is "
                 "running with --block-on-drift. Call refused before reaching the "
-                "downstream server."
+                "downstream server. If this drift has been reviewed and is safe, "
+                "approve it with 'python -m proxy.approve_drift <target> "
+                f"{params.name}' to durably allow this exact change."
             )
             audit_log.blocked_call(tool_name=params.name, reason=reason, arguments=params.arguments)
             return types.CallToolResult(

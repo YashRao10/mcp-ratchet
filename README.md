@@ -96,9 +96,25 @@ places, and they carry different weight:
   the most recent `tools/list` diff this session; a call made before this
   proxy has listed tools yet cannot be assessed and is allowed through
   (fails open on missing information, not closed) — see
-  `proxy/server_side.py`'s `build_proxy_server` docstring. There's still
-  no persistent policy store or allow/deny-listing beyond this single
-  per-session drift check.
+  `proxy/server_side.py`'s `build_proxy_server` docstring. There IS now a
+  persistent policy store (`proxy/policy.py`, `policy/<slug>.json`,
+  mirroring the `baselines/<slug>.json` convention): a drift event a human
+  has reviewed and approved via
+  `python -m proxy.approve_drift <target> <tool_name>` (reads the real
+  `drift_event` records back out of that target's most recent audit log —
+  it won't let you approve something never actually observed) is no
+  longer blocked in future sessions, even though it's still logged and
+  still shows up in the audit log/dashboard exactly as before — approval
+  changes only whether a call is refused, never the historical record.
+  An approval is scoped to the *exact* `tool_name` +
+  `baseline_hash` + `current_hash` transition, not the tool name alone —
+  a further, different edit to an already-approved tool produces a new
+  `current_hash` that doesn't match, and blocks again. This is still a
+  local, unsigned JSON file: it is NOT hash-chained or tamper-evident the
+  way `proxy/audit_log.py`'s log is (see below), so it records a local
+  trust decision made on this machine, not a durable, append-only claim
+  about who approved what — extending the audit log's hash chain to also
+  cover approvals was considered and deliberately left out of scope here.
 - The dashboard aggregates whatever's on disk in `reports/`/`logs/` at
   build time — it has no live/push updates, it's a static snapshot
   regenerated on every push to `main`.
@@ -161,7 +177,20 @@ default, not stored raw (`--log-raw-args` to opt in). By default the proxy
 only monitors, never blocking a call even when drift is detected. Pass
 `--block-on-drift` to make it refuse a call to any tool it currently
 believes has drifted from baseline instead — see the "not yet built"
-section above for exactly what that mode does and doesn't cover.
+section above for exactly what that mode does and doesn't cover, including
+the persistent approval store.
+
+Once you've reviewed a drift event and decided it's safe, approve it so it
+stops re-blocking every future session:
+
+```bash
+python -m proxy.approve_drift toy delete_all_notes
+```
+
+Reads the real `drift_event` records for that tool back out of the
+target's most recent log, and writes the exact transition into
+`policy/toy.json`. See the "not yet built" section above for what this
+approval is and isn't scoped to.
 
 Every record in that file is hash-chained to the one before it, so
 editing, reordering, or truncating any past line breaks the chain for
@@ -196,6 +225,10 @@ proxy/               Layer 2 — runtime proxy/monitor
   audit_log.py              Writes schemas/audit_log_v1.schema.json records,
                               hash-chained for tamper-evidence
   verify_log.py               CLI entrypoint: verify a log's hash chain
+  policy.py                    Persistent policy/<slug>.json store of
+                                 human-approved drift transitions
+  approve_drift.py               CLI entrypoint: approve a reviewed drift
+                                   event out of a target's audit log
   run_proxy.py               CLI entrypoint
 
 reporting/           Layer 3 — dashboard

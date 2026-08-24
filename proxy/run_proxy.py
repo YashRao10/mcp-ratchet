@@ -33,6 +33,7 @@ from mcp.server.stdio import stdio_server
 
 from proxy.audit_log import AuditLogWriter
 from proxy.client_side import DownstreamClient
+from proxy.policy import load_policy
 from proxy.server_side import build_proxy_server
 from scanner.connect import HttpTargetSpec, TargetSpec
 from scanner.fingerprint import ServerFingerprint
@@ -106,10 +107,20 @@ async def run(args: argparse.Namespace) -> None:
 
     logs_dir = REPO_ROOT / "logs"
     audit_log = AuditLogWriter(logs_dir, args.target, log_raw_args=args.log_raw_args)
+    # Loaded unconditionally (harmless/no-op when empty or block_on_drift is
+    # off) — see proxy/policy.py's load_policy for why a missing file just
+    # means "nothing approved yet," not an error.
+    policy_store = load_policy(REPO_ROOT, args.target)
 
     async with DownstreamClient(downstream_target) as downstream:
         with audit_log:
-            server = build_proxy_server(downstream, baseline, audit_log, block_on_drift=args.block_on_drift)
+            server = build_proxy_server(
+                downstream,
+                baseline,
+                audit_log,
+                block_on_drift=args.block_on_drift,
+                policy_store=policy_store,
+            )
             init_options = server.create_initialization_options()
             async with stdio_server() as (read_stream, write_stream):
                 await server.run(read_stream, write_stream, init_options)
