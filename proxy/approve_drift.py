@@ -38,7 +38,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from proxy.drift import DriftEvent
-from proxy.policy import load_policy, policy_path
+from proxy.policy import append_approval_record, load_policy, policy_path
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -124,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
     ]
     out_path = policy_path(REPO_ROOT, args.target)
     store.save(out_path)
+    for entry in approved_entries:
+        append_approval_record(REPO_ROOT, args.target, entry)
 
     print(f"Approved {len(approved_entries)} drift transition(s) for '{args.tool_name}' -> {out_path}")
     for entry in approved_entries:

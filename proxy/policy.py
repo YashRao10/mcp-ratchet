@@ -17,17 +17,31 @@ that tool's description says next; see proxy/drift.py's DriftEvent for why
 baseline_hash/current_hash are the right identity, not the tool name alone.
 
 Storage is a plain local JSON file at policy/<slug>.json, mirroring the
-existing baselines/<slug>.json convention. Explicitly NOT hash-chained or
-tamper-evident the way proxy/audit_log.py's log is: this file records a local
-human trust decision made on this machine, not an append-only record of
-proxy activity, and editing it by hand (or an attacker with local file
-access editing it) leaves no trace. Extending audit_log.py's hash chain to
-also cover approvals was considered and deliberately left out of scope here
-— see README's "what this does NOT do" section for the explicit call-out.
-Approving a drift event does not remove or alter the original drift_event
-record already written to the audit log by AuditLogWriter.drift_event() —
-that record is permanent; this store only changes whether a future call to
-the affected tool is refused under --block-on-drift.
+existing baselines/<slug>.json convention — is_approved() reads this
+snapshot, and it's what --block-on-drift actually checks against at proxy
+startup. Approving a drift event does not remove or alter the original
+drift_event record already written to the audit log by
+AuditLogWriter.drift_event() — that record is permanent; this store only
+changes whether a future call to the affected tool is refused under
+--block-on-drift.
+
+Alongside that snapshot, every approval is also appended to
+policy/<slug>.jsonl — a hash-chained, append-only record of approval
+decisions, using the same prev_record_hash/record_hash convention as
+proxy/audit_log.py (see proxy/hash_chain.py, factored out of that module so
+both logs share one hashing implementation instead of two). This closes the
+gap the README used to call out here: editing, reordering, or truncating a
+past line in that file now breaks the chain for every line after it,
+detectable via verify_policy_chain()/`python -m proxy.verify_policy_log`
+with no input but the file itself. Same bounded guarantee as the audit
+log, not a stronger one: it catches a policy/<slug>.jsonl edited *after
+the fact* by something other than this module's own append path. It does
+NOT prove the *.json snapshot itself hasn't been hand-edited to disagree
+with the chain — the snapshot is still a plain overwritten JSON file for
+fast lookups, not a chain. A human auditing this target's trust decisions
+should treat policy/<slug>.jsonl (verified) as the source of truth and the
+.json snapshot as a cache of it; rebuild_snapshot_from_chain() below exists
+for exactly that reconciliation.
 """
 
 from __future__ import annotations
@@ -38,6 +52,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from proxy.drift import DriftEvent
+from proxy.hash_chain import ChainVerificationResult, GENESIS_HASH, chain_hash, verify_chain_lines
 
 POLICY_SCHEMA_VERSION = 1
 
@@ -150,3 +165,88 @@ def load_policy(repo_root: Path, target_slug: str) -> PolicyStore:
         return PolicyStore(target_slug=target_slug)
     data = json.loads(path.read_text(encoding="utf-8"))
     return PolicyStore.from_dict(data)
+
+
+def approval_log_path(repo_root: Path, target_slug: str) -> Path:
+    return repo_root / "policy" / f"{target_slug}.jsonl"
+
+
+def _last_record_hash(path: Path) -> str:
+    """The prev_record_hash the next appended record must chain from:
+    GENESIS_HASH for a file that doesn't exist yet or is empty, otherwise
+    the record_hash of the last non-blank line. Reads the whole file —
+    fine here since an approval log grows by one line per human review
+    decision, nothing like audit_log.py's per-tool-call volume."""
+    if not path.exists():
+        return GENESIS_HASH
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not lines:
+        return GENESIS_HASH
+    return json.loads(lines[-1])["record_hash"]
+
+
+def append_approval_record(repo_root: Path, target_slug: str, entry: ApprovedDrift) -> Path:
+    """Append one hash-chained record of this approval decision to
+    policy/<slug>.jsonl, chaining from whatever record_hash currently ends
+    that file (or GENESIS_HASH for the first record). Call this alongside
+    PolicyStore.save() — this function only appends the durable log entry,
+    it does not touch the .json snapshot; the two are meant to be updated
+    together (see approve_drift.py's CLI for the paired call site).
+
+    Unlike the .json snapshot (one entry per tool_name+baseline+current
+    triple, later approvals of the same key replacing earlier ones), this
+    log is genuinely append-only: re-approving the same transition again
+    (e.g. with a different --note) still writes a second record here,
+    because the point of this file is "what did a human actually decide,
+    and when" — a full history, not just current state.
+    """
+    path = approval_log_path(repo_root, target_slug)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    prev_hash = _last_record_hash(path)
+
+    record = {
+        "schema_version": "mcp-ratchet-policy-log/1",
+        "timestamp": entry.approved_at,
+        "target_slug": target_slug,
+        "record_type": "approval",
+        **entry.to_dict(),
+    }
+    record["prev_record_hash"] = prev_hash
+    record["record_hash"] = chain_hash(prev_hash, record)
+
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=True, default=str) + "\n")
+    return path
+
+
+def verify_policy_chain(path: Path) -> ChainVerificationResult:
+    """Verify policy/<slug>.jsonl's hash chain from genesis — same bounded
+    guarantee as proxy/audit_log.py's verify_chain (see proxy/hash_chain.py
+    module docstring): catches this file being edited, reordered, or
+    truncated after the fact, not a compromised writer faking a consistent
+    chain from the start."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return verify_chain_lines(lines)
+
+
+def rebuild_snapshot_from_chain(repo_root: Path, target_slug: str) -> PolicyStore:
+    """Reconstruct a PolicyStore purely from policy/<slug>.jsonl's verified
+    history, ignoring whatever policy/<slug>.json currently says. Use this
+    to check the .json snapshot hasn't drifted from (or been hand-edited
+    against) the chain it's supposed to summarize — compare this result's
+    to_dict() against load_policy()'s. Does NOT call verify_policy_chain()
+    itself; callers that care whether the chain is intact (not just what
+    it currently implies) should verify first and treat an unverified
+    chain's rebuild as untrustworthy.
+    """
+    store = PolicyStore(target_slug=target_slug)
+    path = approval_log_path(repo_root, target_slug)
+    if not path.exists():
+        return store
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        entry = ApprovedDrift.from_dict(record)
+        store.approved = [a for a in store.approved if a.key() != entry.key()] + [entry]
+    return store

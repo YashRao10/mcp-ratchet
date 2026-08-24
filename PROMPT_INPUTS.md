@@ -42,3 +42,22 @@ and the per-target detail page. Session ended for the night right after
 this landed ("ok actually we are going to log off for the night pick up
 tomorrow" / "save and exit") — commit+push only, no further feature work
 started.
+
+---
+
+**2026-08-24** — "ok i think we are good for now do you want to check off
+the projects on the linkedin and see updates needed and then you can keep
+developing mcp ratchet" (asked in the same session as a financial-accounts
+review, not project-specific). Closed the last remaining README-flagged
+gap around the approval policy store: "Extending audit_log.py's hash chain
+to also cover approvals was considered and deliberately left out of scope
+here." Factored the hash-chain primitives out of `proxy/audit_log.py` into
+a new shared `proxy/hash_chain.py` (left `audit_log.py` itself untouched
+to avoid any risk to its existing tests, which assert exact wording),
+then built `policy/<slug>.jsonl` — an append-only, hash-chained log of
+every approval decision — on top of it, alongside the existing
+`policy/<slug>.json` snapshot. Added `python -m proxy.verify_policy_log`
+(mirrors `verify_log`) and `rebuild_snapshot_from_chain` so a human can
+reconstruct the snapshot purely from the verified chain and catch the
+`.json` file disagreeing with the `.jsonl` history it's supposed to
+summarize. 11 new tests (149 total, up from 138), all passing.

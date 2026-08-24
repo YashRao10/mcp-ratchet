@@ -11,7 +11,7 @@ from __future__ import annotations
 from proxy.approve_drift import main
 from proxy.audit_log import AuditLogWriter
 from proxy.drift import DRIFT_DESCRIPTION_CHANGED, DRIFT_TOOL_ADDED, DriftEvent
-from proxy.policy import load_policy
+from proxy.policy import approval_log_path, load_policy, verify_policy_chain
 
 
 def _write_log_with_one_drift_event(logs_dir, target="toy") -> "Path":
@@ -44,6 +44,48 @@ def test_approve_writes_a_policy_file_and_prints_confirmation(tmp_path, monkeypa
     assert len(store.approved) == 1
     assert store.approved[0].tool_name == "delete_all_notes"
     assert store.approved[0].current_hash == "hash-a"
+
+    # The CLI must also durably log this approval, not just update the
+    # overwritable .json snapshot — that's the whole point of pairing
+    # store.save() with append_approval_record() in approve_drift.main().
+    log_path = approval_log_path(tmp_path, "toy")
+    assert log_path.exists()
+    result = verify_policy_chain(log_path)
+    assert result.ok
+    assert result.records_checked == 1
+
+
+def test_two_separate_approve_invocations_chain_together(tmp_path, monkeypatch):
+    """Approving two different tools across two separate CLI invocations
+    (two separate processes, in reality) must still produce one valid
+    chain — the second call has to read the first call's trailing hash off
+    disk, not assume it's starting from genesis."""
+    logs_dir = tmp_path / "logs"
+    with AuditLogWriter(logs_dir, "toy") as log:
+        log.drift_event(
+            DriftEvent(
+                drift_type=DRIFT_TOOL_ADDED, tool_name="tool_a",
+                baseline_hash=None, current_hash="hash-a", detail="added",
+            )
+        )
+        log.drift_event(
+            DriftEvent(
+                drift_type=DRIFT_TOOL_ADDED, tool_name="tool_b",
+                baseline_hash=None, current_hash="hash-b", detail="added",
+            )
+        )
+
+    monkeypatch.setattr("proxy.approve_drift.REPO_ROOT", tmp_path)
+    assert main(["toy", "tool_a"]) == 0
+    assert main(["toy", "tool_b"]) == 0
+
+    log_path = approval_log_path(tmp_path, "toy")
+    lines = [line for line in log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(lines) == 2
+
+    result = verify_policy_chain(log_path)
+    assert result.ok
+    assert result.records_checked == 2
 
 
 def test_approve_records_approved_by_and_note(tmp_path, monkeypatch):

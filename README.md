@@ -70,6 +70,21 @@ places, and they carry different weight:
   control entirely (an external append-only store, a signing key the
   proxy never has custody of). Named here deliberately, same as before;
   only the first half of this limitation has been solved.
+- The approval policy store (`policy/<slug>.json`, what `--block-on-drift`
+  actually reads at proxy startup) now has the same hash-chain guarantee
+  as the audit log, via a second append-only log at `policy/<slug>.jsonl`
+  (`proxy/policy.py`'s `append_approval_record`/`verify_policy_chain`,
+  `python -m proxy.verify_policy_log <path>`) built on the primitives
+  factored out into `proxy/hash_chain.py` so both logs share one hashing
+  implementation. Same bounded guarantee, not a stronger one: it catches
+  the `.jsonl` history being edited, reordered, or truncated after the
+  fact, not a compromised writer faking a consistent chain from genesis.
+  It also does not, by itself, prove the `.json` snapshot hasn't been
+  hand-edited to disagree with that history — `rebuild_snapshot_from_chain`
+  reconstructs a snapshot purely from the verified `.jsonl` so a human can
+  diff it against what's actually on disk in `.json` and catch exactly
+  that kind of drift between "what the log says was approved" and "what
+  the fast-lookup file currently claims."
 - No semantic/whitespace-normalized diffing as a distinct diff mode —
   every field-level drift event now carries a `whitespace_only_change`
   flag (see above) so a cosmetic edit is labeled, but the exact-hash
