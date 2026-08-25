@@ -94,9 +94,21 @@ def _is_scannable(path: Path) -> bool:
     Fixed by checking the filename directly for the dotenv family ahead of
     the suffix check, rather than trying to coerce pathlib's suffix
     semantics into matching it.
+
+    Same class of problem applies to other extensionless config files that
+    commonly carry real secrets: a bare `Dockerfile` (or an env-qualified
+    variant like `Dockerfile.prod`) can hardcode an `ENV`/`ARG` credential,
+    and a `Procfile` can hardcode one in a process command line. Both have
+    no suffix at all, so they hit the same `path.suffix in
+    _SCANNABLE_SUFFIXES` miss the dotenv family did — named explicitly in
+    the README's "not yet built" section as a known gap until this fix.
     """
     name = path.name
     if name == ".env" or name.startswith(".env."):
+        return True
+    if name == "Dockerfile" or name.startswith("Dockerfile."):
+        return True
+    if name == "Procfile":
         return True
     return path.suffix in _SCANNABLE_SUFFIXES
 

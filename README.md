@@ -72,9 +72,12 @@ places, and they carry different weight:
   dogfooding this check against a target with a real `.env` file present.
   Fixed by checking the filename directly for the dotenv family
   (`name == ".env"` or `name.startswith(".env.")`) ahead of the suffix
-  check, in `_is_scannable`. Still not covered: any other extensionless
-  config file (a bare `Dockerfile`, a `Procfile`, etc.) that isn't part of
-  the dotenv family specifically.
+  check, in `_is_scannable`. Same fix now also covers a bare `Dockerfile`
+  (and env-qualified variants like `Dockerfile.prod`) and a `Procfile` —
+  both extensionless, both a real place a credential ends up hardcoded
+  (a Dockerfile `ENV`/`ARG` line, a Procfile process command line). Still
+  not covered: any other extensionless config file outside these three
+  named families (a bare `Makefile`, for instance).
 - `scanner/scan_batch.py` scans a list of your own already-known targets
   in one run (`python -m scanner.scan_batch --config targets.json`),
   writing each target's usual per-target report plus one aggregate batch

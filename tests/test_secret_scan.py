@@ -79,3 +79,42 @@ def test_scan_source_tree_still_skips_dotenv_lookalike_with_no_secret(tmp_path):
     (tmp_path / ".env").write_text("APP_NAME=my-app\n")
     findings = scan_source_tree(tmp_path)
     assert findings == []
+
+
+def test_scan_source_tree_finds_secret_in_bare_dockerfile(tmp_path):
+    """Same class of bug as the dotenv fix: `Path("Dockerfile").suffix`
+    is also "" since the filename has no dot at all, so a bare Dockerfile
+    hardcoding a credential in an ENV/ARG line was silently never scanned."""
+    (tmp_path / "Dockerfile").write_text(
+        'ENV AWS_ACCESS_KEY_ID="AKIAABCDEFGHIJKLMNOP"\n'
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "aws_access_key_id" for f in findings)
+
+
+def test_scan_source_tree_finds_secret_in_dockerfile_variant(tmp_path):
+    """Env-qualified Dockerfile variants (Dockerfile.prod, Dockerfile.dev)
+    are a real convention and hit the same extensionless-filename gap."""
+    (tmp_path / "Dockerfile.prod").write_text(
+        'api_key = "sk-thisisareallylongfakeapikeyvalue1234"\n'
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "generic_api_key_assignment" for f in findings)
+
+
+def test_scan_source_tree_finds_secret_in_procfile(tmp_path):
+    """A Procfile process command line can hardcode a credential and has
+    no suffix at all, same gap as Dockerfile and dotenv."""
+    (tmp_path / "Procfile").write_text(
+        "web: gunicorn app:app --env AWS_ACCESS_KEY_ID=AKIAABCDEFGHIJKLMNOP\n"
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "aws_access_key_id" for f in findings)
+
+
+def test_scan_source_tree_still_skips_dockerfile_lookalike_with_no_secret(tmp_path):
+    """Negative control: a clean Dockerfile shouldn't produce a finding
+    just because it's now scanned."""
+    (tmp_path / "Dockerfile").write_text("FROM python:3.13-slim\n")
+    findings = scan_source_tree(tmp_path)
+    assert findings == []
