@@ -90,6 +90,22 @@ def test_render_target_detail_empty_states_do_not_crash():
     assert "No drift events logged for this target." in html
 
 
+def test_render_target_detail_back_link_matches_the_deployed_filename():
+    """Regression test: the deploy workflow copies reports/dashboard.html
+    to _site/index.html (see .github/workflows/deploy.yml), so a target
+    detail page's "back to dashboard" link pointing at "dashboard.html"
+    404s on the live site even though it resolves fine locally, since
+    that file never exists in _site/ under its dev-time name. Caught live
+    2026-08-26 by the user clicking the link on the deployed dashboard —
+    no test had asserted this href before."""
+    from reporting.audit_summary import TargetSummary
+
+    html = render_target_detail(TargetSummary(slug="unscanned"))
+
+    assert 'href="index.html"' in html
+    assert 'href="dashboard.html"' not in html
+
+
 def test_render_target_detail_shows_full_drift_history_not_just_recent_ten(tmp_path):
     reports_dir = tmp_path / "reports"
     logs_dir = tmp_path / "logs"

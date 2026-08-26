@@ -134,7 +134,7 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
 </style>
 </head><body>
 <div class="wrap">
-  <a class="back" href="dashboard.html">&larr; back to dashboard</a>
+  <a class="back" href="index.html">&larr; back to dashboard</a>
   <h1>{escape(summary.slug)}</h1>
   <div class="server-name">{server_name}</div>
   <div class="command">{target_command}</div>
