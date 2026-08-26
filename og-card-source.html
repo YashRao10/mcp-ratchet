@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+:root{
+  --bg:#0a0b0d;--surface:#14171a;--border:#262b30;--border-strong:#353b41;
+  --ink:#eef1f0;--ink-soft:#9aa3a8;--ink-faint:#5f686d;
+  --brass:#c9974a;--steel:#4a9d9c;--warn:#d97757;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1200px;height:630px;overflow:hidden}
+body{
+  background:
+    radial-gradient(ellipse 700px 500px at 8% -15%, rgba(74,157,156,.14), transparent 60%),
+    radial-gradient(ellipse 600px 500px at 108% 25%, rgba(201,151,74,.10), transparent 55%),
+    radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px) 0 0/26px 26px,
+    var(--bg);
+  font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
+  position:relative;
+}
+.frame{position:absolute;inset:40px;border:1px solid var(--border);border-radius:14px}
+.wrap{position:relative;height:100%;display:flex;flex-direction:column;justify-content:center;padding:0 96px}
+.mark{
+  width:84px;height:84px;border-radius:16px;background:var(--surface);border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;margin-bottom:36px;
+  font-family:'Consolas','Courier New',monospace;font-weight:700;font-size:34px;color:var(--steel);
+}
+.eyebrow{font-family:'Consolas','Courier New',monospace;font-size:19px;letter-spacing:3px;color:var(--steel);text-transform:uppercase;font-weight:700;margin-bottom:24px}
+h1{font-size:72px;font-weight:700;color:var(--ink);letter-spacing:-1.5px;margin-bottom:26px}
+.rule{width:90px;height:4px;background:var(--steel);border-radius:2px;margin-bottom:30px}
+p{font-size:26px;color:var(--ink-soft);max-width:920px;line-height:1.55;margin-bottom:34px}
+.stats{display:flex;gap:28px;font-family:'Consolas','Courier New',monospace;font-size:19px;color:var(--ink-soft)}
+.stats span{display:flex;align-items:center;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.stats strong{color:var(--ink);font-weight:700}
+</style></head>
+<body>
+<div class="frame"></div>
+<div class="wrap">
+  <div class="mark">&#8594;</div>
+  <div class="eyebrow">MCP Server Security</div>
+  <h1>mcp-ratchet</h1>
+  <div class="rule"></div>
+  <p>A security scanner and runtime drift monitor for MCP servers &mdash; every install-time scanner checks once; this one keeps watching.</p>
+  <div class="stats">
+    <span><span class="dot" style="background:var(--steel)"></span><strong>171/171</strong>&nbsp;tests</span>
+    <span><span class="dot" style="background:var(--brass)"></span><strong>2</strong>&nbsp;targets tracked</span>
+    <span style="color:var(--ink-faint)">&middot; static scan &middot; runtime drift &middot; audit log</span>
+  </div>
+</div>
+</body></html>

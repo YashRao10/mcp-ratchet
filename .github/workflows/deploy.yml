@@ -32,6 +32,7 @@ jobs:
           mkdir -p _site
           cp reports/dashboard.html _site/index.html
           cp reports/target-*.html _site/ 2>/dev/null || true
+          cp og-image.png _site/og-image.png
 
       - uses: actions/upload-pages-artifact@v3
         with:

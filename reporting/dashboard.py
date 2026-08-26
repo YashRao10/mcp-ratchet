@@ -146,6 +146,13 @@ def render_dashboard(summaries: list[TargetSummary]) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mcp-ratchet</title>
 <meta name="description" content="A security scanner and runtime drift monitor for MCP servers.">
+<meta property="og:title" content="mcp-ratchet — MCP Server Security">
+<meta property="og:description" content="A security scanner and runtime drift monitor for MCP servers — every install-time scanner checks once; this one keeps watching.">
+<meta property="og:image" content="https://yashrao10.github.io/mcp-ratchet/og-image.png">
+<meta property="og:url" content="https://yashrao10.github.io/mcp-ratchet/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://yashrao10.github.io/mcp-ratchet/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
