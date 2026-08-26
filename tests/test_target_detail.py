@@ -4,7 +4,7 @@ from reporting.audit_summary import build_summaries
 from reporting.target_detail import build_and_write_all, render_target_detail
 
 
-def _write_scan(reports_dir, slug, generated_at="2026-08-21T00:00:00+00:00", mismatch=None, secret=None):
+def _write_scan(reports_dir, slug, generated_at="2026-08-21T00:00:00+00:00", mismatch=None, secret=None, injection_verdicts=None):
     reports_dir.mkdir(parents=True, exist_ok=True)
     data = {
         "target_slug": slug,
@@ -23,6 +23,7 @@ def _write_scan(reports_dir, slug, generated_at="2026-08-21T00:00:00+00:00", mis
         "mismatch_findings": [mismatch] if mismatch else [],
         "secret_findings": [secret] if secret else [],
         "dependency_findings": [],
+        "injection_verdicts": injection_verdicts or [],
         "summary": {
             "is_clean": not (mismatch or secret),
             "suspicious_tool_count": 0,
@@ -78,6 +79,60 @@ def test_render_target_detail_shows_real_finding_fields_not_just_a_count(tmp_pat
 
     assert "get_status" in html
     assert "accepts a delete parameter despite read-like name" in html
+
+
+def test_render_target_detail_shows_why_a_tool_needs_review_not_just_the_count(tmp_path):
+    """Regression: the dashboard card shows a 'needs review' count, but
+    until this test the detail page never rendered *why* — a viewer had
+    to open the raw JSON report to learn a tool was needs_review because
+    ANTHROPIC_API_KEY wasn't set, not because it was actually judged
+    suspicious. Found 2026-08-26 while adding the reference-git/fetch/
+    filesystem targets with no key configured."""
+    reports_dir = tmp_path / "reports"
+    _write_scan(
+        reports_dir,
+        "no-key",
+        injection_verdicts=[
+            {
+                "tool_name": "git_status",
+                "suspicious": None,
+                "needs_review": True,
+                "reasoning": "ANTHROPIC_API_KEY not set; prompt-injection check was not run.",
+                "raw_error": "no_api_key",
+            }
+        ],
+    )
+    summary = build_summaries(reports_dir, tmp_path / "logs")[0]
+
+    html = render_target_detail(summary)
+
+    assert "git_status" in html
+    assert "ANTHROPIC_API_KEY not set" in html
+
+
+def test_render_target_detail_hides_clean_injection_verdicts(tmp_path):
+    """A tool that was actually judged and came back clean shouldn't
+    clutter this list — only suspicious or needs_review verdicts belong
+    here, same convention as the other three finding lists."""
+    reports_dir = tmp_path / "reports"
+    _write_scan(
+        reports_dir,
+        "checked-clean",
+        injection_verdicts=[
+            {
+                "tool_name": "git_status",
+                "suspicious": False,
+                "needs_review": False,
+                "reasoning": "Tool description is a plain, literal statement of its function.",
+            }
+        ],
+    )
+    summary = build_summaries(reports_dir, tmp_path / "logs")[0]
+
+    html = render_target_detail(summary)
+
+    assert "No tools flagged." in html
+    assert "plain, literal statement" not in html
 
 
 def test_render_target_detail_empty_states_do_not_crash():

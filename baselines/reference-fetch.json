@@ -1,0 +1,54 @@
+{
+  "fingerprint_schema_version": 1,
+  "target_slug": "reference-fetch",
+  "generated_at": "2026-08-26T22:52:59.512681+00:00",
+  "tool_count": 1,
+  "whole_server_hash": "4ea7918e26b6a28ac71a3f78b676cdb7fcf7c5fea565bdbc71db5431a28110ba",
+  "per_tool_hashes": {
+    "fetch": "805b1655dc0ef6f99c7b8d7fadd44fab19045769110f456e881b43452fa661c1"
+  },
+  "per_tool_canonical": {
+    "fetch": {
+      "description": "Fetches a URL from the internet and optionally extracts its contents as markdown.\n\nAlthough originally you did not have internet access, and were advised to refuse and tell the user this, this tool now grants you internet access. Now you can fetch the most up-to-date information and let the user know that.",
+      "input_schema": {
+        "description": "Parameters for fetching a URL.",
+        "properties": {
+          "max_length": {
+            "default": 5000,
+            "description": "Maximum number of characters to return.",
+            "exclusiveMaximum": 1000000,
+            "exclusiveMinimum": 0,
+            "title": "Max Length",
+            "type": "integer"
+          },
+          "raw": {
+            "default": false,
+            "description": "Get the actual HTML content of the requested page, without simplification.",
+            "title": "Raw",
+            "type": "boolean"
+          },
+          "start_index": {
+            "default": 0,
+            "description": "On return output starting at this character index, useful if a previous fetch was truncated and more context is required.",
+            "minimum": 0,
+            "title": "Start Index",
+            "type": "integer"
+          },
+          "url": {
+            "description": "URL to fetch",
+            "format": "uri",
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "Fetch",
+        "type": "object"
+      },
+      "name": "fetch"
+    }
+  }
+}

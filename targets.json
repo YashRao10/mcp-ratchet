@@ -4,6 +4,32 @@
       "slug": "personal-financial-analysis",
       "command": ["python", "C:\\Users\\Yash Rao\\Desktop\\finance-projects\\financial-analysis-mcp\\server.py"],
       "skip_injection_check": true
+    },
+    {
+      "slug": "reference-git",
+      "command": [
+        "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\Scripts\\python.exe",
+        "-m", "mcp_server_git",
+        "--repository", "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet"
+      ],
+      "cwd": "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\Lib\\site-packages\\mcp_server_git"
+    },
+    {
+      "slug": "reference-fetch",
+      "command": [
+        "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\Scripts\\python.exe",
+        "-m", "mcp_server_fetch"
+      ],
+      "cwd": "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\Lib\\site-packages\\mcp_server_fetch"
+    },
+    {
+      "slug": "reference-filesystem",
+      "command": [
+        "node",
+        "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\scratch-fs-root"
+      ],
+      "cwd": "C:\\Users\\Yash Rao\\Desktop\\mcp-ratchet\\.venv-targets\\node_modules\\@modelcontextprotocol\\server-filesystem"
     }
   ]
 }

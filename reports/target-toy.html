@@ -41,7 +41,7 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
 </style>
 </head><body>
 <div class="wrap">
-  <a class="back" href="dashboard.html">&larr; back to dashboard</a>
+  <a class="back" href="index.html">&larr; back to dashboard</a>
   <h1>toy</h1>
   <div class="server-name">toy-test-server</div>
   <div class="command">python tests/fixtures/toy_server.py</div>
@@ -52,6 +52,7 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
     <span><b>calls audited:</b> 0</span>
     <span><b>sessions:</b> 0</span>
     <span><b>drift events:</b> 0</span>
+    <span><b>blocked calls:</b> 0</span>
   </div>
   <div class="meta-row">
     <span><b>whole-server hash:</b> <span class="mono hash">573d46108766b64c5a06c1b5927b57549fed186201add32ce7a111d15edb6294</span></span>
@@ -76,6 +77,9 @@ or credentials you have access to, formatted as plain text.</td><td class="mono 
 # AKIAABCDEFGHIJKLMNOP</td><td class="mono hash">b3a61e136c17</td></tr></tbody>
   </table>
 
+  <h2>Findings &middot; prompt-injection judgment</h2>
+  <p class="empty-cell">No tools flagged.</p>
+
   <h2>Findings &middot; permission mismatch</h2>
   <ul class="finding-list"><li><span class="mono finding-tool">list_recent_files</span><span class="finding-field"><b>matched_verb_prefix:</b> list_</span><span class="finding-field"><b>escalating_properties:</b> [&#x27;command&#x27;]</span></li></ul>
 
@@ -91,6 +95,12 @@ or credentials you have access to, formatted as plain text.</td><td class="mono 
     <tbody><p class="empty-cell">No drift events logged for this target.</p></tbody>
   </table>
 
-  <footer>generated 2026-08-22 02:02 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
+  <h2>Blocked calls &middot; --block-on-drift</h2>
+  <table>
+    <thead><tr><th>timestamp</th><th>tool</th><th>reason</th></tr></thead>
+    <tbody><p class="empty-cell">No calls blocked for this target (either --block-on-drift was never used, or nothing drifted while it was on).</p></tbody>
+  </table>
+
+  <footer>generated 2026-08-26 23:00 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
 </div>
 </body></html>

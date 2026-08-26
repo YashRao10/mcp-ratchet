@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reference-git &middot; mcp-ratchet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0d; --surface:#14171a; --surface-2:#1b1f23; --border:#262b30; --border-strong:#353b41;
+  --ink:#eef1f0; --ink-soft:#9aa3a8; --ink-faint:#5f686d;
+  --brass:#c9974a; --steel:#4a9d9c; --warn:#d97757; --critical:#d1495b;
+  --head:"Barlow Condensed",sans-serif; --body:"Public Sans",system-ui,sans-serif; --mono:"JetBrains Mono",Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); margin:0; font-size:15px; line-height:1.55;}
+.wrap{max-width:960px; margin:0 auto; padding:48px 28px 90px;}
+a.back{font-family:var(--mono); font-size:12.5px; color:var(--brass); text-decoration:none;}
+a.back:hover{text-decoration:underline;}
+h1{font-family:var(--head); font-weight:700; font-size:36px; letter-spacing:0.01em; margin:14px 0 2px; text-transform:uppercase;}
+.server-name{color:var(--ink-faint); font-size:13px; margin-bottom:20px;}
+.command{font-family:var(--mono); font-size:12px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:10px 14px; margin-bottom:28px; word-break:break-all;}
+.meta-row{display:flex; gap:24px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--ink-faint); margin-bottom:36px;}
+.meta-row b{color:var(--ink-soft);}
+h2{font-family:var(--head); font-size:18px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink); margin:36px 0 14px; padding-top:20px; border-top:1px solid var(--border);}
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{text-align:left; font-family:var(--head); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); padding:6px 10px; border-bottom:1px solid var(--border-strong);}
+td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--ink-soft);}
+.mono{font-family:var(--mono);}
+.hash{color:var(--ink-faint); font-size:11.5px;}
+.tool-desc{white-space:pre-wrap; max-width:520px;}
+.empty-cell{color:var(--ink-faint); font-family:var(--mono); font-size:13px; padding:10px 0;}
+.finding-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+.finding-list li{background:var(--surface); border:1px solid rgba(217,119,87,0.35); border-radius:6px; padding:10px 12px; font-size:12.5px; display:flex; flex-direction:column; gap:4px;}
+.finding-tool{color:var(--warn); font-weight:600;}
+.finding-field{color:var(--ink-soft);}
+.finding-field b{color:var(--ink-faint); font-weight:500;}
+footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
+</style>
+</head><body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; back to dashboard</a>
+  <h1>reference-git</h1>
+  <div class="server-name">mcp-git</div>
+  <div class="command">C:\Users\Yash Rao\Desktop\mcp-ratchet\.venv-targets\Scripts\python.exe -m mcp_server_git --repository C:\Users\Yash Rao\Desktop\mcp-ratchet</div>
+
+  <div class="meta-row">
+    <span><b>last scanned:</b> 2026-08-26T22:52:58.146640+00:00</span>
+    <span><b>tool count:</b> 12</span>
+    <span><b>calls audited:</b> 0</span>
+    <span><b>sessions:</b> 0</span>
+    <span><b>drift events:</b> 0</span>
+    <span><b>blocked calls:</b> 0</span>
+  </div>
+  <div class="meta-row">
+    <span><b>whole-server hash:</b> <span class="mono hash">1d8b7af04457a65314da49b148c1e1e018d4e072c25489d3ee5759606b0c0b84</span></span>
+  </div>
+
+  <h2>Tool inventory</h2>
+  <table>
+    <thead><tr><th>tool</th><th>description</th><th>hash</th></tr></thead>
+    <tbody><tr><td class="mono">git_add</td><td class="tool-desc">Adds file contents to the staging area</td><td class="mono hash">538456f28d54</td></tr><tr><td class="mono">git_branch</td><td class="tool-desc">List Git branches</td><td class="mono hash">21b10e8c9e80</td></tr><tr><td class="mono">git_checkout</td><td class="tool-desc">Switches branches</td><td class="mono hash">0f79e1dfebff</td></tr><tr><td class="mono">git_commit</td><td class="tool-desc">Records changes to the repository</td><td class="mono hash">d0fd564f0bc3</td></tr><tr><td class="mono">git_create_branch</td><td class="tool-desc">Creates a new branch from an optional base branch</td><td class="mono hash">5ab7b89102e5</td></tr><tr><td class="mono">git_diff</td><td class="tool-desc">Shows differences between branches or commits</td><td class="mono hash">1ef5e67c5381</td></tr><tr><td class="mono">git_diff_staged</td><td class="tool-desc">Shows changes that are staged for commit</td><td class="mono hash">e33abd453e15</td></tr><tr><td class="mono">git_diff_unstaged</td><td class="tool-desc">Shows changes in the working directory that are not yet staged</td><td class="mono hash">ca9f5e4c8109</td></tr><tr><td class="mono">git_log</td><td class="tool-desc">Shows the commit logs</td><td class="mono hash">c5e3325fc7ba</td></tr><tr><td class="mono">git_reset</td><td class="tool-desc">Unstages all staged changes</td><td class="mono hash">e7ca4abfc563</td></tr><tr><td class="mono">git_show</td><td class="tool-desc">Shows the contents of a commit</td><td class="mono hash">fa26952c05de</td></tr><tr><td class="mono">git_status</td><td class="tool-desc">Shows the working tree status</td><td class="mono hash">d264cfa13f97</td></tr></tbody>
+  </table>
+
+  <h2>Findings &middot; prompt-injection judgment</h2>
+  <ul class="finding-list"><li><span class="mono finding-tool">git_status</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_diff_unstaged</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_diff_staged</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_diff</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_commit</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_add</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_reset</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_log</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_create_branch</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_checkout</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_show</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li><li><span class="mono finding-tool">git_branch</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li></ul>
+
+  <h2>Findings &middot; permission mismatch</h2>
+  <p class="empty-cell">No permission mismatches.</p>
+
+  <h2>Findings &middot; secrets</h2>
+  <p class="empty-cell">No secrets detected.</p>
+
+  <h2>Findings &middot; dependency CVEs</h2>
+  <p class="empty-cell">No dependency findings.</p>
+
+  <h2>Drift history &middot; pure hashing, all events</h2>
+  <table>
+    <thead><tr><th>timestamp</th><th>type</th><th>tool</th><th>detail</th></tr></thead>
+    <tbody><p class="empty-cell">No drift events logged for this target.</p></tbody>
+  </table>
+
+  <h2>Blocked calls &middot; --block-on-drift</h2>
+  <table>
+    <thead><tr><th>timestamp</th><th>tool</th><th>reason</th></tr></thead>
+    <tbody><p class="empty-cell">No calls blocked for this target (either --block-on-drift was never used, or nothing drifted while it was on).</p></tbody>
+  </table>
+
+  <footer>generated 2026-08-26 23:00 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
+</div>
+</body></html>

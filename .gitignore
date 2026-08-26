@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .env
 venv/
+.venv-targets/
 logs/*.jsonl
 policy/*.json
 policy/*.jsonl

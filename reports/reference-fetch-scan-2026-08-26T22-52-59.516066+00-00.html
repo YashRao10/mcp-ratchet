@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<title>mcp-ratchet scan — reference-fetch</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;background:#0d1113;color:#e9ece9;}
+h1,h2{font-weight:600;}
+.status{display:inline-block;padding:4px 12px;border-radius:20px;font-family:monospace;font-size:13px;}
+.status.clean{background:#173026;color:#54c085;}
+.status.flagged{background:#341a16;color:#e2705c;}
+table{width:100%;border-collapse:collapse;margin:12px 0 28px;font-size:13px;}
+th,td{border:1px solid #2a3234;padding:6px 10px;text-align:left;vertical-align:top;}
+th{background:#1d2325;}
+code{font-family:monospace;color:#5cc2b8;}
+</style></head><body>
+<h1>mcp-ratchet scan report</h1>
+<p><b>Target:</b> <code>reference-fetch</code> — <code>C:\Users\Yash Rao\Desktop\mcp-ratchet\.venv-targets\Scripts\python.exe -m mcp_server_fetch</code><br>
+<b>Generated:</b> 2026-08-26T22:52:59.516066+00:00<br>
+<b>Status:</b> <span class="status clean">CLEAN</span></p>
+
+<h2>Prompt-injection check (real Claude API verdict per tool)</h2>
+<table><tr><th>Tool</th><th>Verdict</th><th>Confidence</th><th>Reasoning</th></tr>
+<tr><td>fetch</td><td>NEEDS REVIEW</td><td></td><td>ANTHROPIC_API_KEY not set; prompt-injection check was not run.</td></tr>
+</table>
+
+<h2>Permission-scope mismatch (scripted)</h2>
+<table><tr><th>Tool</th><th>Matched verb</th><th>Escalating properties</th></tr>
+<tr><td colspan="3">No mismatches found.</td></tr>
+</table>
+
+<h2>Secret scan (scripted, source tree only)</h2>
+<table><tr><th>File</th><th>Line</th><th>Pattern</th><th>Match (redacted)</th></tr>
+<tr><td colspan="4">No secrets found.</td></tr>
+</table>
+
+<h2>Dependency CVEs (OSV.dev)</h2>
+<p style="font-size:13px;color:#9aa5a3;">"exact" resolution came from a lockfile or an exact pin — a real
+resolved version. "best-effort-transitive" came from a bare manifest with
+no lockfile, walked via registry metadata — an approximation, not a
+guaranteed install set. See README's "what this does NOT do" section.</p>
+<table><tr><th>Package</th><th>Version</th><th>Ecosystem</th><th>Resolution</th><th>Vulnerability IDs</th></tr>
+<tr><td colspan="5">No dependency findings.</td></tr>
+</table>
+
+</body></html>

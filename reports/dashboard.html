@@ -4,6 +4,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mcp-ratchet</title>
 <meta name="description" content="A security scanner and runtime drift monitor for MCP servers.">
+<meta property="og:title" content="mcp-ratchet — MCP Server Security">
+<meta property="og:description" content="A security scanner and runtime drift monitor for MCP servers — every install-time scanner checks once; this one keeps watching.">
+<meta property="og:image" content="https://yashrao10.github.io/mcp-ratchet/og-image.png">
+<meta property="og:url" content="https://yashrao10.github.io/mcp-ratchet/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://yashrao10.github.io/mcp-ratchet/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -49,6 +56,7 @@ h1{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.01
 .pill-unknown{background:var(--surface-2); color:var(--ink-faint); border-color:var(--border-strong);}
 
 .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 16px; padding:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
+.stat-row-5{grid-template-columns:repeat(5,1fr);}
 .stat-row dt{font-family:var(--head); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); margin:0; white-space:nowrap;}
 .stat-row dd{font-family:var(--mono); font-size:19px; font-weight:600; margin:2px 0 0; font-variant-numeric:tabular-nums;}
 .stat-row .v-warn{color:var(--critical);}
@@ -56,6 +64,8 @@ h1{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.01
 .tier{margin-bottom:12px;}
 .tier-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin-bottom:6px;}
 .tier-hash .tier-label,.tier-hash .drift-log-label{color:var(--critical);}
+.tier-blocked .drift-log-label{color:var(--warn);}
+.tier-blocked .drift-tool{color:var(--warn);}
 .chip-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
 .chip{font-family:var(--mono); font-size:11.5px; display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:5px; border:1px solid var(--border-strong); color:var(--ink-soft);}
 .chip-n{font-weight:600; color:var(--ink);}
@@ -87,16 +97,16 @@ footer a:hover{text-decoration:underline;}
       <h1>mcp-ratchet</h1>
       <span class="mark">v1</span>
     </div>
-    <div class="meta">generated 2026-08-22 02:02 UTC</div>
+    <div class="meta">generated 2026-08-26 23:00 UTC</div>
   </div>
   <p class="tagline">A security scanner and runtime drift monitor for MCP servers &mdash; every install-time scanner checks once; this one keeps watching.</p>
 
   <div class="stats">
-    <div class="stat"><div class="n">2</div><div class="l">Targets tracked</div></div>
-    <div class="stat clean"><div class="n">1</div><div class="l">Clean</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">Targets tracked</div></div>
+    <div class="stat clean"><div class="n">4</div><div class="l">Clean</div></div>
     <div class="stat flagged"><div class="n">1</div><div class="l">Findings present</div></div>
     <div class="stat drift"><div class="n">0</div><div class="l">Live drift detected</div></div>
-    <div class="stat"><div class="n">1</div><div class="l">Calls audited</div></div>
+    <div class="stat"><div class="n">25</div><div class="l">Calls audited</div></div>
   </div>
 
   <div class="grid">
@@ -110,17 +120,91 @@ footer a:hover{text-decoration:underline;}
         <span class="pill pill-clean">clean</span>
       </header>
 
-      <dl class="stat-row">
+      <dl class="stat-row stat-row-5">
         <div><dt>tools</dt><dd>5</dd></div>
-        <div><dt>calls</dt><dd>1</dd></div>
-        <div><dt>sessions</dt><dd>1</dd></div>
+        <div><dt>calls</dt><dd>25</dd></div>
+        <div><dt>sessions</dt><dd>27</dd></div>
         <div><dt>drift</dt><dd class="">0</dd></div>
+        <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
       <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
-      <div class="card-foot">last scanned 2026-08-22T01:50:37.670292+00:00</div>
+      <div class="card-foot">last scanned 2026-08-26T22:52:56.749816+00:00</div>
 
+      
+      
+    </article>
+    <article class="card">
+      <header class="card-head">
+        <div>
+          <div class="card-slug"><a class="card-slug-link" href="target-reference-fetch.html">reference-fetch</a></div>
+          <div class="card-server">mcp-fetch</div>
+        </div>
+        <span class="pill pill-clean">clean</span>
+      </header>
+
+      <dl class="stat-row stat-row-5">
+        <div><dt>tools</dt><dd>1</dd></div>
+        <div><dt>calls</dt><dd>0</dd></div>
+        <div><dt>sessions</dt><dd>0</dd></div>
+        <div><dt>drift</dt><dd class="">0</dd></div>
+        <div><dt>blocked</dt><dd class="">0</dd></div>
+      </dl>
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">1</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+
+      <div class="card-foot">last scanned 2026-08-26T22:52:59.516066+00:00</div>
+
+      
+      
+    </article>
+    <article class="card">
+      <header class="card-head">
+        <div>
+          <div class="card-slug"><a class="card-slug-link" href="target-reference-filesystem.html">reference-filesystem</a></div>
+          <div class="card-server">secure-filesystem-server</div>
+        </div>
+        <span class="pill pill-clean">clean</span>
+      </header>
+
+      <dl class="stat-row stat-row-5">
+        <div><dt>tools</dt><dd>14</dd></div>
+        <div><dt>calls</dt><dd>0</dd></div>
+        <div><dt>sessions</dt><dd>0</dd></div>
+        <div><dt>drift</dt><dd class="">0</dd></div>
+        <div><dt>blocked</dt><dd class="">0</dd></div>
+      </dl>
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">14</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+
+      <div class="card-foot">last scanned 2026-08-26T22:53:39.193229+00:00</div>
+
+      
+      
+    </article>
+    <article class="card">
+      <header class="card-head">
+        <div>
+          <div class="card-slug"><a class="card-slug-link" href="target-reference-git.html">reference-git</a></div>
+          <div class="card-server">mcp-git</div>
+        </div>
+        <span class="pill pill-clean">clean</span>
+      </header>
+
+      <dl class="stat-row stat-row-5">
+        <div><dt>tools</dt><dd>12</dd></div>
+        <div><dt>calls</dt><dd>0</dd></div>
+        <div><dt>sessions</dt><dd>0</dd></div>
+        <div><dt>drift</dt><dd class="">0</dd></div>
+        <div><dt>blocked</dt><dd class="">0</dd></div>
+      </dl>
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">12</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+
+      <div class="card-foot">last scanned 2026-08-26T22:52:58.146640+00:00</div>
+
+      
       
     </article>
     <article class="card">
@@ -132,11 +216,12 @@ footer a:hover{text-decoration:underline;}
         <span class="pill pill-flagged">findings present</span>
       </header>
 
-      <dl class="stat-row">
+      <dl class="stat-row stat-row-5">
         <div><dt>tools</dt><dd>4</dd></div>
         <div><dt>calls</dt><dd>0</dd></div>
         <div><dt>sessions</dt><dd>0</dd></div>
         <div><dt>drift</dt><dd class="">0</dd></div>
+        <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
       <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-flag"><span class="chip-n">1</span>perm. mismatch</span><span class="chip chip-flag"><span class="chip-n">1</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
@@ -144,11 +229,12 @@ footer a:hover{text-decoration:underline;}
       <div class="card-foot">last scanned 2026-08-21T07:35:38.752506+00:00</div>
 
       
+      
     </article>
   </div>
 
   <footer>
-    <span>schema: mcp-ratchet-audit-log/1 &middot; 0 total drift events logged</span>
+    <span>schema: mcp-ratchet-audit-log/1 &middot; 0 total drift events logged &middot; 0 calls blocked</span>
     <span><a href="https://github.com/YashRao10/mcp-ratchet">github.com/YashRao10/mcp-ratchet</a></span>
   </footer>
 

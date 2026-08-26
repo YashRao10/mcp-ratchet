@@ -1,0 +1,53 @@
+{
+  "batch_schema_version": 1,
+  "generated_at": "2026-08-26T22:53:39.221566+00:00",
+  "target_count": 4,
+  "connected_count": 4,
+  "clean_count": 4,
+  "targets": [
+    {
+      "slug": "personal-financial-analysis",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 5,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    },
+    {
+      "slug": "reference-git",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 12,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    },
+    {
+      "slug": "reference-fetch",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 1,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    },
+    {
+      "slug": "reference-filesystem",
+      "connect_ok": true,
+      "connect_error": null,
+      "is_clean": true,
+      "tool_count": 14,
+      "suspicious_tool_count": 0,
+      "mismatch_count": 0,
+      "secret_count": 0,
+      "dependency_finding_count": 0
+    }
+  ]
+}

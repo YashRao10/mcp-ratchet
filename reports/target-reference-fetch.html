@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>personal-financial-analysis &middot; mcp-ratchet</title>
+<title>reference-fetch &middot; mcp-ratchet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -42,58 +42,32 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
 </head><body>
 <div class="wrap">
   <a class="back" href="index.html">&larr; back to dashboard</a>
-  <h1>personal-financial-analysis</h1>
-  <div class="server-name">personal-financial-analysis</div>
-  <div class="command">python C:\Users\Yash Rao\Desktop\finance-projects\financial-analysis-mcp\server.py</div>
+  <h1>reference-fetch</h1>
+  <div class="server-name">mcp-fetch</div>
+  <div class="command">C:\Users\Yash Rao\Desktop\mcp-ratchet\.venv-targets\Scripts\python.exe -m mcp_server_fetch</div>
 
   <div class="meta-row">
-    <span><b>last scanned:</b> 2026-08-26T22:52:56.749816+00:00</span>
-    <span><b>tool count:</b> 5</span>
-    <span><b>calls audited:</b> 25</span>
-    <span><b>sessions:</b> 27</span>
+    <span><b>last scanned:</b> 2026-08-26T22:52:59.516066+00:00</span>
+    <span><b>tool count:</b> 1</span>
+    <span><b>calls audited:</b> 0</span>
+    <span><b>sessions:</b> 0</span>
     <span><b>drift events:</b> 0</span>
     <span><b>blocked calls:</b> 0</span>
   </div>
   <div class="meta-row">
-    <span><b>whole-server hash:</b> <span class="mono hash">94102b730a693b7ebd5f93c8754b0fc816a3b093661481de83cd6fff14dae61f</span></span>
+    <span><b>whole-server hash:</b> <span class="mono hash">4ea7918e26b6a28ac71a3f78b676cdb7fcf7c5fea565bdbc71db5431a28110ba</span></span>
   </div>
 
   <h2>Tool inventory</h2>
   <table>
     <thead><tr><th>tool</th><th>description</th><th>hash</th></tr></thead>
-    <tbody><tr><td class="mono">get_fred_nowcast</td><td class="tool-desc">Runs the GDP bridge-equation nowcast — plain OLS on 5 leading FRED
-indicators (industrial production, retail sales, initial claims,
-payrolls, housing starts), walk-forward backtested against actual GDP
-prints — and returns the current quarter&#x27;s nowcast value plus backtest
-accuracy vs. a naive baseline. Requires FRED_API_KEY.</td><td class="mono hash">670957898cd9</td></tr><tr><td class="mono">get_regime_now</td><td class="tool-desc">Classifies the current macro regime (Fed funds trend, yield curve,
-inflation, unemployment) from live FRED data using the rule-based
-6-regime classifier, and reports which GICS sectors have historically
-performed best/worst during months in that same regime. Requires
-FRED_API_KEY to be set in this server&#x27;s environment.</td><td class="mono hash">5d151e9f207a</td></tr><tr><td class="mono">query_warehouse</td><td class="tool-desc">Runs a read-only SQL query against the personal Warehouse (DuckDB).
-Tables available: mart_portfolio_vs_macro (portfolio checkpoints joined
-to that month&#x27;s macro backdrop), mart_macro_indicators_monthly (Fed
-funds, 10y/2y yields + spread, CPI, unemployment), mart_sector_monthly_returns
-(GICS sector ETF monthly returns), mart_portfolio_daily (portfolio value,
-deposits, organic P&amp;L per checkpoint). Only SELECT statements are
-allowed; anything else is rejected before it touches the database.</td><td class="mono hash">12d3089f4ea4</td></tr><tr><td class="mono">run_causal_control</td><td class="tool-desc">Estimates the causal effect of the June 2026 Fed hawkish pivot
-(2026-06-17) on a GICS sector ETF&#x27;s price using synthetic control, with
-a placebo test across all 11 sectors as a significance check. `treated`
-is the sector ticker to test (default XLK). `fit_end` (YYYY-MM-DD), if
-given and earlier than the treatment date, fits the control weights on
-only that earlier window to test whether the post-treatment gap was
-already emerging beforehand — otherwise this is an ordinary pre/post
-split at the treatment date. Always check fit_quality_warning before
-trusting the reported gap.</td><td class="mono hash">13c38580bdd5</td></tr><tr><td class="mono">run_factor_decomposition</td><td class="tool-desc">Decomposes a held ticker&#x27;s recent (~400 calendar day) return into
-market, sector, and rate-factor betas plus an idiosyncratic residual,
-via a 3-factor orthogonalized OLS fit. `ticker` must be one of the
-holdings tracked in positions.json (broad-market/sector ETFs held
-directly are excluded — decomposing them against themselves is
-circular). Check r_squared before trusting the split: a low value means
-the three factors barely explain this name&#x27;s moves.</td><td class="mono hash">690fa8134c2b</td></tr></tbody>
+    <tbody><tr><td class="mono">fetch</td><td class="tool-desc">Fetches a URL from the internet and optionally extracts its contents as markdown.
+
+Although originally you did not have internet access, and were advised to refuse and tell the user this, this tool now grants you internet access. Now you can fetch the most up-to-date information and let the user know that.</td><td class="mono hash">805b1655dc0e</td></tr></tbody>
   </table>
 
   <h2>Findings &middot; prompt-injection judgment</h2>
-  <p class="empty-cell">No tools flagged.</p>
+  <ul class="finding-list"><li><span class="mono finding-tool">fetch</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li></ul>
 
   <h2>Findings &middot; permission mismatch</h2>
   <p class="empty-cell">No permission mismatches.</p>

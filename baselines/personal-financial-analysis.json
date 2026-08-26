@@ -1,7 +1,7 @@
 {
   "fingerprint_schema_version": 1,
   "target_slug": "personal-financial-analysis",
-  "generated_at": "2026-08-22T01:50:37.666291+00:00",
+  "generated_at": "2026-08-26T22:52:48.954476+00:00",
   "tool_count": 5,
   "whole_server_hash": "94102b730a693b7ebd5f93c8754b0fc816a3b093661481de83cd6fff14dae61f",
   "per_tool_hashes": {

@@ -3,6 +3,10 @@
 A security scanner and runtime drift monitor for MCP (Model Context
 Protocol) servers.
 
+![Dashboard screenshot: 5 targets tracked, 4 clean, 1 findings present, showing per-target tool counts and judgment/deterministic check chips](dashboard-screenshot.jpg)
+
+Live dashboard: https://yashrao10.github.io/mcp-ratchet/
+
 ## Why this exists
 
 There are 17,000+ MCP server listings across various directories today,

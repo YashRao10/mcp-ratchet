@@ -157,6 +157,12 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
     <tbody>{_tool_rows(scan)}</tbody>
   </table>
 
+  <h2>Findings &middot; prompt-injection judgment</h2>
+  {_finding_list(
+      [v for v in (scan.get("injection_verdicts") or []) if v.get("needs_review") or v.get("suspicious")],
+      "No tools flagged.",
+  )}
+
   <h2>Findings &middot; permission mismatch</h2>
   {_finding_list(scan.get("mismatch_findings") or [], "No permission mismatches.")}
 
