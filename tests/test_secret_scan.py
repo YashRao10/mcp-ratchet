@@ -118,3 +118,38 @@ def test_scan_source_tree_still_skips_dockerfile_lookalike_with_no_secret(tmp_pa
     (tmp_path / "Dockerfile").write_text("FROM python:3.13-slim\n")
     findings = scan_source_tree(tmp_path)
     assert findings == []
+
+
+def test_scan_source_tree_finds_secret_in_bare_makefile(tmp_path):
+    """Same class of bug as Dockerfile/Procfile/dotenv: `Path("Makefile").suffix`
+    is also "" since the filename has no dot at all, so a target-specific
+    variable assignment hardcoding a credential was silently never scanned."""
+    (tmp_path / "Makefile").write_text(
+        'deploy:\n\tAWS_ACCESS_KEY_ID=AKIAABCDEFGHIJKLMNOP ./deploy.sh\n'
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "aws_access_key_id" for f in findings)
+
+
+def test_scan_source_tree_finds_secret_in_makefile_variant(tmp_path):
+    """GNU make itself recognizes GNUmakefile/makefile/Makefile, in that
+    priority order — all three are real, equally-likely filenames, not
+    just the capitalized convention. Uses plain `=` (recursive-expansion
+    assignment) rather than `:=` (simple-expansion) — the shared
+    generic_api_key_assignment pattern matches a single `:` or `=`, not
+    Make's two-character `:=` operator, and widening that shared regex
+    for one filename family is a bigger, separately-scoped change than
+    this gap-fix warrants."""
+    (tmp_path / "GNUmakefile").write_text(
+        'API_KEY = "sk-thisisareallylongfakeapikeyvalue1234"\n'
+    )
+    findings = scan_source_tree(tmp_path)
+    assert any(f.pattern_name == "generic_api_key_assignment" for f in findings)
+
+
+def test_scan_source_tree_still_skips_makefile_lookalike_with_no_secret(tmp_path):
+    """Negative control: a clean Makefile shouldn't produce a finding just
+    because it's now scanned."""
+    (tmp_path / "Makefile").write_text("test:\n\tpytest tests/\n")
+    findings = scan_source_tree(tmp_path)
+    assert findings == []

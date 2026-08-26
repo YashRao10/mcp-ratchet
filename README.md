@@ -73,11 +73,19 @@ places, and they carry different weight:
   Fixed by checking the filename directly for the dotenv family
   (`name == ".env"` or `name.startswith(".env.")`) ahead of the suffix
   check, in `_is_scannable`. Same fix now also covers a bare `Dockerfile`
-  (and env-qualified variants like `Dockerfile.prod`) and a `Procfile` —
-  both extensionless, both a real place a credential ends up hardcoded
-  (a Dockerfile `ENV`/`ARG` line, a Procfile process command line). Still
-  not covered: any other extensionless config file outside these three
-  named families (a bare `Makefile`, for instance).
+  (and env-qualified variants like `Dockerfile.prod`), a `Procfile`, and
+  a `Makefile` — recognizing all three names GNU make itself looks for
+  (`GNUmakefile`, `makefile`, `Makefile`) — all extensionless, all a real
+  place a credential ends up hardcoded (a Dockerfile `ENV`/`ARG` line, a
+  Procfile process command line, a Makefile variable assignment or
+  recipe line). **Named limitation on the Makefile coverage specifically:**
+  `generic_api_key_assignment` matches a single `:` or `=`, not Make's
+  two-character `:=` (or `?=`/`+=`) assignment operators — a secret
+  assigned with one of those is still missed even though the file itself
+  is no longer skipped. Widening that shared pattern (used across every
+  scanned file type) is a separately-scoped fix, not folded into this one.
+  Still not covered: any other extensionless config file outside these
+  four named families.
 - `scanner/scan_batch.py` scans a list of your own already-known targets
   in one run (`python -m scanner.scan_batch --config targets.json`),
   writing each target's usual per-target report plus one aggregate batch

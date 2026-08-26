@@ -100,8 +100,24 @@ def _is_scannable(path: Path) -> bool:
     variant like `Dockerfile.prod`) can hardcode an `ENV`/`ARG` credential,
     and a `Procfile` can hardcode one in a process command line. Both have
     no suffix at all, so they hit the same `path.suffix in
-    _SCANNABLE_SUFFIXES` miss the dotenv family did — named explicitly in
-    the README's "not yet built" section as a known gap until this fix.
+    _SCANNABLE_SUFFIXES` miss the dotenv family did.
+
+    A `Makefile` is the same shape again, and was the one named example
+    left in the README as the next extensionless family to cover. GNU
+    make itself looks for three names, in this priority order:
+    `GNUmakefile`, `makefile`, `Makefile` — all three are recognized here,
+    not just the capitalized convention, since any of them is a real,
+    equally-likely place for a target-specific variable assignment
+    (`API_KEY = ...`) or a recipe line embedding a credential
+    (`curl -H "Authorization: Bearer ..."`) to end up hardcoded.
+
+    Named limitation, not silently swallowed: the file is now scanned, but
+    `generic_api_key_assignment` matches a single `:` or `=`, not Make's
+    two-character `:=` (simple-expansion) or `?=`/`+=` operators — an
+    assignment written with one of those will still be missed even though
+    the file itself is no longer skipped. Widening that shared pattern
+    (used across every scanned file type, not just Makefiles) is a
+    separately-scoped fix, not folded in here.
     """
     name = path.name
     if name == ".env" or name.startswith(".env."):
@@ -109,6 +125,8 @@ def _is_scannable(path: Path) -> bool:
     if name == "Dockerfile" or name.startswith("Dockerfile."):
         return True
     if name == "Procfile":
+        return True
+    if name in ("Makefile", "makefile", "GNUmakefile"):
         return True
     return path.suffix in _SCANNABLE_SUFFIXES
 
