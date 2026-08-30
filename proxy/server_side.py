@@ -23,12 +23,12 @@ from proxy.audit_log import AuditLogWriter
 from proxy.client_side import DownstreamClient
 from proxy.drift import DRIFT_TOOL_REMOVED, diff_against_baseline
 from proxy.policy import PolicyStore
-from scanner.fingerprint import ServerFingerprint
+from scanner.fingerprint import BaselineError, ServerFingerprint
 
 
 def build_proxy_server(
     downstream: DownstreamClient,
-    baseline: ServerFingerprint | None,
+    baseline: ServerFingerprint | BaselineError | None,
     audit_log: AuditLogWriter,
     server_name: str = "mcp-ratchet-proxy",
     block_on_drift: bool = False,
@@ -37,8 +37,13 @@ def build_proxy_server(
     """Construct the low-level Server that fronts `downstream`.
 
     `baseline` may be None (no Phase 1 scan has been run for this target
-    yet) — in that case drift detection is skipped and this is noted
-    explicitly rather than silently treated as "no drift."
+    yet) or a BaselineError (a baseline file exists but is unreadable,
+    unparseable, missing a required field, or an unsupported
+    fingerprint_schema_version) — in either case drift detection is
+    skipped and the condition is logged explicitly (a "no_baseline" or a
+    "baseline_error" record respectively) rather than silently treated as
+    "no drift." The two are kept distinct so a reader can tell "never had
+    a baseline" from "the baseline is broken."
 
     `block_on_drift` (off by default, matching the README's long-standing
     "the proxy only monitors" default): when True, a call to any tool this
@@ -77,6 +82,15 @@ def build_proxy_server(
                 error_message="No Phase 1 baseline exists for this target; drift detection skipped this call.",
             )
             drifted_tool_names = set()
+        elif isinstance(baseline, BaselineError):
+            audit_log.error(
+                error_type="baseline_error",
+                error_message=(
+                    f"Baseline file for this target is present but unusable "
+                    f"({baseline.reason}: {baseline.detail}); drift detection could not run this call."
+                ),
+            )
+            drifted_tool_names = set()
         else:
             live_fp, drift_events = diff_against_baseline(result.tools, baseline)
             audit_log.tools_list_snapshot(
@@ -108,7 +122,7 @@ def build_proxy_server(
     async def on_call_tool(ctx, params: types.CallToolRequestParams):
         start = time.monotonic()
         anomaly_flags = []
-        if baseline is not None and params.name not in baseline.per_tool_hashes:
+        if isinstance(baseline, ServerFingerprint) and params.name not in baseline.per_tool_hashes:
             anomaly_flags.append("tool_not_in_baseline")
 
         if block_on_drift and params.name in drifted_tool_names:

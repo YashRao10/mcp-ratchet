@@ -14,6 +14,12 @@ slug (baselines/<slug>.json) — run a static scan first. The proxy will
 still run without one, but drift detection is skipped and every
 tools/list call logs an explicit "no_baseline" error record rather than
 silently reporting no drift.
+
+If a baseline file exists but is unreadable, unparseable, missing a
+required field, or declares an unsupported fingerprint_schema_version,
+load_baseline returns a BaselineError (not a crash): the proxy still runs,
+but every tools/list call logs a "baseline_error" record and drift is not
+evaluated — it is never treated as "no drift" (TOR-9).
 """
 
 from __future__ import annotations
@@ -36,7 +42,7 @@ from proxy.client_side import DownstreamClient
 from proxy.policy import load_policy
 from proxy.server_side import build_proxy_server
 from scanner.connect import HttpTargetSpec, TargetSpec
-from scanner.fingerprint import ServerFingerprint
+from scanner.fingerprint import FINGERPRINT_SCHEMA_VERSION, BaselineError, ServerFingerprint
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -71,12 +77,58 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return args
 
 
-def load_baseline(target_slug: str) -> ServerFingerprint | None:
+def load_baseline(target_slug: str) -> ServerFingerprint | BaselineError | None:
+    """Load the baseline fingerprint for a target slug.
+
+    Returns None when no baseline file exists, a ServerFingerprint when one
+    exists and is valid, or a BaselineError when a file exists but cannot
+    be used (TOR-9). Never raises for a bad file — a broken baseline must
+    not crash the proxy such that tool calls proceed with drift silently
+    un-evaluated.
+    """
     baseline_path = REPO_ROOT / "baselines" / f"{target_slug}.json"
     if not baseline_path.exists():
         return None
-    data = json.loads(baseline_path.read_text(encoding="utf-8"))
-    return ServerFingerprint.from_dict(data)
+
+    try:
+        raw = baseline_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return BaselineError("unreadable", str(exc), str(baseline_path))
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        return BaselineError("unparseable", str(exc), str(baseline_path))
+    if not isinstance(data, dict):
+        return BaselineError(
+            "unparseable",
+            f"top-level JSON is {type(data).__name__}, expected an object",
+            str(baseline_path),
+        )
+
+    if "fingerprint_schema_version" not in data:
+        return BaselineError(
+            "missing_field",
+            "baseline has no 'fingerprint_schema_version' field",
+            str(baseline_path),
+        )
+    file_version = data["fingerprint_schema_version"]
+    if file_version != FINGERPRINT_SCHEMA_VERSION:
+        return BaselineError(
+            "schema_version_mismatch",
+            f"baseline declares fingerprint_schema_version {file_version!r}; "
+            f"this tool supports {FINGERPRINT_SCHEMA_VERSION}",
+            str(baseline_path),
+        )
+
+    try:
+        return ServerFingerprint.from_dict(data)
+    except (KeyError, TypeError) as exc:
+        return BaselineError(
+            "missing_field",
+            f"baseline is missing a required field: {exc}",
+            str(baseline_path),
+        )
 
 
 async def run(args: argparse.Namespace) -> None:
@@ -102,6 +154,15 @@ async def run(args: argparse.Namespace) -> None:
             f"WARNING: no baseline found at baselines/{args.target}.json — "
             "run scanner.run_scan first for real drift detection. Proxying "
             "without it; every tools/list call will log a no_baseline error record.",
+            file=sys.stderr,
+        )
+    elif isinstance(baseline, BaselineError):
+        print(
+            f"ERROR: baseline file {baseline.path} is present but unusable "
+            f"({baseline.reason}: {baseline.detail}). Proxying WITHOUT drift "
+            "evaluation; every tools/list call will log a baseline_error record. "
+            "Drift is not being checked — re-create the baseline with "
+            "scanner.run_scan.",
             file=sys.stderr,
         )
 

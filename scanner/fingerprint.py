@@ -107,6 +107,31 @@ def hash_tool(tool: Any) -> str:
 
 
 @dataclass
+class BaselineError:
+    """A baseline file exists for a target but cannot be used: unreadable,
+    unparseable JSON, missing a required field, or declaring a
+    fingerprint_schema_version this tool does not support.
+
+    Distinct from ``None`` (no baseline file at all) so the runtime proxy
+    can log and surface the two conditions separately — "never had a
+    baseline" (TOR-8) versus "the baseline is broken" (TOR-9) — and so
+    neither can ever be read as "no drift".
+    """
+
+    reason: str  # "unreadable" | "unparseable" | "missing_field" | "schema_version_mismatch"
+    detail: str
+    path: str
+
+    def to_dict(self) -> dict:
+        return {
+            "record_type": "baseline_error",
+            "reason": self.reason,
+            "detail": self.detail,
+            "path": self.path,
+        }
+
+
+@dataclass
 class ServerFingerprint:
     fingerprint_schema_version: int
     target_slug: str
