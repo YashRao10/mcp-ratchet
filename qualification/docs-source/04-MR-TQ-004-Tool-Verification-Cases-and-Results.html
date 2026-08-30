@@ -1,0 +1,205 @@
+<title>mcp-ratchet — Tool Verification Cases &amp; Results</title>
+<meta charset="utf-8">
+<style>
+:root{
+  --bg:#0a0c0f; --panel:#131519; --ink:#f4f1e8; --ink-soft:#c7c2b2; --ink-faint:#8a8577;
+  --accent:#de9c47; --rule:#2a2d33; --rule-strong:#56543f;
+  --blue:#4a76a6; --teal:#45927c; --plum:#9070ac;
+  --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+  --head: Bahnschrift, "Segoe UI Semibold", sans-serif;
+  --body: Georgia, "Times New Roman", serif;
+}
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15.5px; line-height:1.55; margin:0;}
+body::before{content:'';position:fixed;inset:0;background:var(--bg);z-index:-1;}
+.page{max-width:760px;margin:0 auto;padding:48px 28px 80px;}
+.eyebrow{font-family:var(--head); letter-spacing:0.16em; text-transform:uppercase; font-size:11.5px; color:var(--accent); margin-bottom:6px;}
+h1{font-family:var(--head); font-weight:600; font-size:27px; color:var(--ink); margin:0 0 4px 0; letter-spacing:0.01em;}
+.subtitle{color:var(--ink-soft); font-size:13.5px; margin-bottom:22px;}
+.doc-meta{display:flex; gap:22px; flex-wrap:wrap; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:9px 0; margin-bottom:30px;}
+.doc-meta span b{color:var(--ink-soft); font-weight:normal;}
+h2{font-family:var(--head); font-weight:600; font-size:18px; color:var(--ink); margin:34px 0 12px 0; display:flex; align-items:baseline; gap:10px; break-after:avoid;}
+h2 .sec{font-family:var(--mono); font-size:13px; color:var(--accent); font-weight:normal;}
+h3{font-family:var(--head); font-weight:600; font-size:14.5px; color:var(--ink-soft); margin:20px 0 8px 0; text-transform:uppercase; letter-spacing:0.04em; break-after:avoid;}
+p{margin:0 0 12px 0;}
+ul,ol{margin:0 0 14px 0; padding-left:22px;}
+li{margin-bottom:5px; break-inside:avoid;}
+code{font-family:var(--mono); font-size:0.92em; color:var(--accent); background:var(--panel); padding:1px 5px; border-radius:3px;}
+.table-wrap{margin:10px 0 18px 0; break-inside:avoid;}
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{font-family:var(--head); font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-faint); background:var(--panel); text-align:left; padding:6px 9px; border:1px solid var(--rule-strong);}
+td{padding:6px 9px; border:1px solid var(--rule); color:var(--ink-soft); vertical-align:top;}
+td.center{text-align:center;}
+.tor-table code{overflow-wrap:anywhere; word-break:break-word;}
+.tor-table col.c-tor{width:5%;} .tor-table col.c-req{width:21%;} .tor-table col.c-case{width:38%;} .tor-table col.c-res{width:29%;} .tor-table col.c-verdict{width:7%;}
+.tor-table td{font-size:12px;}
+.callout{border-left:3px solid var(--accent); background:rgba(222,156,71,0.06); padding:10px 14px; margin:14px 0 18px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.callout .lead{font-family:var(--head); font-size:12px; letter-spacing:0.03em; text-transform:uppercase; color:var(--accent); margin-bottom:4px;}
+.callout.gap{border-left-color:#c0664f; background:rgba(192,102,79,0.08);}
+.callout.gap .lead{color:#c0664f;}
+.callout.ok{border-left-color:var(--teal); background:rgba(69,146,124,0.07);}
+.callout.ok .lead{color:var(--teal);}
+.def{border-left:3px solid var(--blue); background:var(--panel); padding:9px 13px; margin:12px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.def b{color:var(--ink); font-family:var(--head); font-weight:600; font-size:13px;}
+.tag{display:inline-block; font-family:var(--mono); font-size:10.5px; padding:1px 7px; border-radius:3px; border:1px solid; margin-right:4px;}
+.tag.pass{color:var(--teal); border-color:var(--teal);}
+.tag.gap{color:#c0664f; border-color:#c0664f;}
+.tag.warn{color:var(--accent); border-color:var(--accent);}
+.doc-footer{position:fixed; left:0; right:0; bottom:0; padding-top:4px; border-top:1px solid var(--rule); font-family:var(--mono); font-size:8.5px; letter-spacing:0.03em; color:var(--ink-faint); display:flex; justify-content:space-between;}
+@media screen{ .doc-footer{display:none;} }
+@media print{
+  @page{ size: 215.9mm 355.6mm; margin: 8mm 11mm 20mm 11mm; background: var(--bg); }
+  .page{ padding:0; max-width:none; }
+  body{ font-size:13px; line-height:1.38; }
+  h2{ margin:20px 0 8px 0; break-after:avoid; }
+  h3{ margin:13px 0 6px 0; break-after:avoid; }
+  .table-wrap, table, .callout, .def, li{ break-inside:avoid; }
+  .doc-footer{ display:flex; }
+}
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">HummingBird Technosys, Inc. &middot; DO-330 Tool Qualification Study</div>
+  <h1>mcp-ratchet &mdash; Tool Verification Cases &amp; Results</h1>
+  <div class="subtitle">The executed operational verification: one or more requirements-based cases per Tool Operational Requirement, run on the qualified environment, with recorded results and the code changes the verification drove.</div>
+  <div class="doc-meta">
+    <span><b>Doc ID:</b> MR-TQ-004</span>
+    <span><b>Rev:</b> 2026-08-29</span>
+    <span><b>TQL:</b> 5</span>
+    <span><b>Verified commit:</b> mcp-ratchet <code>907c8a9</code></span>
+    <span><b>Read Order:</b> 4 of 5</span>
+  </div>
+
+  <p style="break-inside:avoid">MR-TQ-003 &sect;2 assigns the bulk of a TQL-5 effort to <i>tool operational verification &mdash; requirements-based testing in the operational environment</i>. This document is that verification, executed. Each of TOR-1 through TOR-11 (MR-TQ-002 &sect;3) has at least one verification case with a defined input, an expected result, and a recorded result. Where the current source did not meet a TOR when MR-TQ-002 was written, the code change that closed it is identified by commit.</p>
+
+  <h2><span class="sec">&sect;1</span> Method and what counts as evidence</h2>
+  <p>Verification is requirements-based: a case exists to demonstrate one TOR, not to exercise code for its own sake. Cases were executed by running the mcp-ratchet automated test suite (<code>python -m pytest</code>) against the repository at commit <code>907c8a9</code> on the environment recorded in &sect;2. Three forms of evidence are cited:</p>
+  <ul>
+    <li><b>Automated test cases</b> &mdash; named tests under <code>tests/</code>, each asserting a specific TOR behaviour. These are the primary evidence for TOR-1 through TOR-7 and TOR-10.</li>
+    <li><b>Repository commits</b> &mdash; for the three TORs whose verification required a source change (TOR-8, TOR-9, TOR-11), the commit that made the change, so the qualified behaviour is tied to an identified configuration item.</li>
+    <li><b>Real generated artifacts</b> &mdash; for the TOR-8 and TOR-11 <i>report markers</i>, the check is run against an actually generated <code>reports/dashboard.html</code> and <code>reports/drift-summary.json</code>, per MR-TQ-003 &sect;9 ("on a real generated report, not just the template source").</li>
+  </ul>
+  <div class="callout gap">
+    <div class="lead">Not claimed here</div>
+    This verification was performed by the tool's author. DO-330 expects verification independent of development (MR-TQ-003 &sect;7). That limitation is unresolved and is carried to MR-TQ-005 as a condition on any real use of this material.
+  </div>
+
+  <h2><span class="sec">&sect;2</span> Operational environment, as run</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Value at verification</th><th>Against MR-TQ-002 &sect;2</th></tr>
+    <tr><td>Host OS</td><td>Windows 10, 64-bit (build 10.0.19045)</td><td>matches</td></tr>
+    <tr><td>Python</td><td>CPython 3.13.5</td><td>matches (qualified point is 3.13)</td></tr>
+    <tr><td>MCP SDK</td><td><code>mcp</code> 2.1.1</td><td>satisfies <code>mcp &gt;= 2.0.0</code>; see &sect;6 &mdash; the <code>Tool</code> field set (TOR-1) was re-checked and is unchanged from 2.0.0</td></tr>
+    <tr><td>Fingerprint schema</td><td><code>FINGERPRINT_SCHEMA_VERSION = 1</code></td><td>matches</td></tr>
+    <tr><td>mcp-ratchet</td><td>commit <code>907c8a9</code> on <code>main</code></td><td>candidate qualified commit (CM action in &sect;7)</td></tr>
+    <tr><td>Suite result</td><td>194 passed, 0 failed, 0 skipped</td><td>&mdash;</td></tr>
+  </table></div>
+
+  <h2><span class="sec">&sect;3</span> Verification results &mdash; per TOR</h2>
+  <p>Each row: the requirement in brief, the verification case(s) demonstrating it, the recorded result, and the verdict. Full case source is in the named test file.</p>
+  <div class="table-wrap"><table class="tor-table">
+    <colgroup><col class="c-tor"><col class="c-req"><col class="c-case"><col class="c-res"><col class="c-verdict"></colgroup>
+    <tr><th>TOR</th><th>Requirement (brief)</th><th>Verification case(s)</th><th>Recorded result</th><th>Verdict</th></tr>
+
+    <tr><td>TOR-1</td><td>Baseline records every observable <code>Tool</code> field; absent is recorded as absent, not null.</td>
+      <td><code>test_fingerprint.py</code>: <code>records_per_tool_hashes</code>, <code>none_valued_optional_fields_do_not_leak_into_hash</code>, <code>fingerprint_round_trips_through_dict</code></td>
+      <td>Canonical form carries name / title / description / input_schema / output_schema / annotations / icons / meta. A <code>None</code>-valued optional field is dropped, not hashed as null. Fingerprint survives a <code>to_dict</code>/<code>from_dict</code> round trip unchanged.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-2</td><td>Match iff canonical forms are byte-identical: key order and formatting don't count, array order and any string change do.</td>
+      <td><code>test_fingerprint.py</code>: <code>identical_tool_hashes_identically_across_calls</code>, <code>dict_key_order_does_not_affect_hash</code>, <code>whitespace_only_change_still_changes_hash</code>, <code>schema_change_changes_hash</code></td>
+      <td>Repeat fingerprints of one tool hash identically. Reordering object keys does not change the hash. A whitespace-only description edit does change it. An <code>input_schema</code> edit does change it.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-3</td><td>A tool on the current surface but not the baseline &rarr; drift, identified as added.</td>
+      <td><code>test_drift.py</code>: <code>new_tool_added_between_two_runs_is_flagged_as_tool_added</code> (live subprocess: baseline the toy server, add a tool to its source, reconnect)</td>
+      <td>Exactly one <code>tool_added</code> event, <code>tool_name</code> = the added tool. No other tool flagged.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-4</td><td>A tool in the baseline but not on the current surface &rarr; drift, identified as removed.</td>
+      <td><code>test_drift_classification.py</code>: <code>removed_tool_is_flagged_as_tool_removed</code></td>
+      <td>One <code>tool_removed</code> event for the dropped tool; <code>current_hash</code> is <code>None</code>; no spurious events for the retained tool.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-5</td><td>A tool in both whose canonical forms differ &rarr; drift, naming the tool and each changed field with baseline and current values.</td>
+      <td><code>test_drift.py</code>: <code>description_change_between_two_runs_is_flagged_as_drift</code> (live). <code>test_drift_classification.py</code>: <code>input_schema_change_is_flagged_as_schema_changed</code>, <code>annotations_change_is_flagged_as_annotations_changed</code>, <code>multiple_fields_changing_at_once_each_reported</code></td>
+      <td>Field-level classification correct for description, <code>input_schema</code>, and <code>annotations</code>. A change touching three fields at once emits one event per field, each naming the tool and carrying distinct baseline and current hashes. The <code>detail</code> string carries the changed values.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-6</td><td>A whitespace-only difference may be labelled as such but is still reported as drift; no heuristic turns a real difference into "no drift".</td>
+      <td><code>test_drift.py</code>: <code>whitespace_only_edit_still_drifts_but_is_labeled_as_such</code>. <code>test_fingerprint.py</code>: <code>normalize_whitespace_never_makes_a_real_content_change_disappear</code></td>
+      <td>A whitespace-only description edit still produces a drift event (with <code>whitespace_only_change = True</code>); the event is not suppressed. <code>normalize_whitespace</code> never collapses a genuine content difference to equal.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-7</td><td>Same baseline and same surface &rarr; same result on every run, independent of dict or tool-list order.</td>
+      <td><code>test_fingerprint.py</code>: <code>fingerprint_tools_whole_server_hash_is_order_independent</code>, <code>identical_tool_hashes_identically_across_calls</code>. <code>test_drift_classification.py</code>: <code>unchanged_surface_produces_no_events</code> (diffs a reversed-order equal list)</td>
+      <td>Whole-server hash is identical regardless of tool order. Re-diffing an unchanged surface, including with tools listed in reverse order, yields zero events.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-8</td><td>No baseline file &rarr; report "drift not evaluated", log it, never report "no drift"; the output is not usable as the &sect;1 assurance.</td>
+      <td><code>test_report_markers.py</code>: <code>no_baseline_session_is_not_clean</code>, <code>dashboard_and_machine_readable_flag_not_evaluated</code>, <code>evaluated_target_reports_performed</code>. <code>test_baseline_error.py</code>: <code>missing_file_returns_none</code>. Real artifact: generated <code>reports/drift-summary.json</code>.</td>
+      <td>A target whose latest proxy session logged <code>no_baseline</code> has <code>drift_status = "no_baseline"</code>, <code>is_clean = False</code>, a "DRIFT NOT EVALUATED" banner and pill on the dashboard, and <code>drift_evaluation: "not_performed"</code> in the machine-readable summary. A target with a real diff reports <code>"performed"</code>.</td>
+      <td class="center"><span class="tag pass">PASS</span> <span style="color:var(--ink-faint)">(was partial)</span></td></tr>
+
+    <tr><td>TOR-9</td><td>Baseline exists but unreadable / unparseable / missing a field / unsupported version &rarr; explicit baseline-error, logged, never "no drift", no crash.</td>
+      <td><code>test_baseline_error.py</code> (8 cases): missing&rarr;<code>None</code>; valid&rarr;<code>ServerFingerprint</code>; unparseable / non-object / missing-field / missing-version / unsupported-version&rarr;<code>BaselineError</code>; proxy path. Commit <code>78d5971</code>.</td>
+      <td>No case raises. Every bad-file case returns a typed <code>BaselineError</code> with a <code>reason</code>. In the proxy, <code>on_list_tools</code> writes an <code>error</code> record with <code>error_type = "baseline_error"</code>, writes no <code>tools_list_snapshot</code> and no <code>drift_event</code>, and still forwards the real result and a following tool call.</td>
+      <td class="center"><span class="tag pass">PASS</span> <span style="color:var(--ink-faint)">(was not met)</span></td></tr>
+
+    <tr><td>TOR-10</td><td>Drift detection does not alter what the client receives; the real <code>tools/list</code> result is forwarded unmodified.</td>
+      <td><code>test_forward.py</code>: <code>forward_list_tools_matches_direct_connection_exactly</code>, <code>forward_call_tool_returns_real_result_unmodified</code>. <code>test_server_side.py</code>: <code>monitor_mode_still_forwards_a_drifted_tool_call_by_default</code>. <code>test_baseline_error.py</code> asserts the real surface is forwarded even on the error path.</td>
+      <td>The forwarded <code>tools/list</code> byte-matches a direct downstream connection. Neither a detected drift nor a skipped evaluation edits the forwarded result.</td>
+      <td class="center"><span class="tag pass">PASS</span></td></tr>
+
+    <tr><td>TOR-11</td><td>The prompt-injection check is outside the qualified function; its output is never represented as a qualified result and never affects the drift result.</td>
+      <td><code>test_report_markers.py</code>: <code>scan_report_marks_injection_check_not_qualified</code>, <code>dashboard_and_detail_carry_not_qualified_marker</code>. Commit <code>a054e4a</code>.</td>
+      <td>Scan JSON carries <code>injection_check.qualification_status = "not_qualified"</code>. The scan report, dashboard, and target-detail page each render a visible "not a qualified result" marker on the injection section. The injection verdict is computed on a separate code path and never enters the drift-detection result.</td>
+      <td class="center"><span class="tag pass">PASS</span> <span style="color:var(--ink-faint)">(was partial)</span></td></tr>
+  </table></div>
+
+  <div class="callout ok">
+    <div class="lead">Result</div>
+    All eleven TORs have at least one passing verification case at commit <code>907c8a9</code>. 44 cases across the seven cited test files; 194 in the full suite; 0 failures.
+  </div>
+
+  <h2><span class="sec">&sect;4</span> Code changes this verification drove</h2>
+  <p>Three of the eleven TORs did not hold against the source as MR-TQ-002 &sect;4 recorded it. Each was closed by a change on the mcp-ratchet repository, before its verification case was executed, per the sequencing rule in MR-TQ-003 &sect;4.</p>
+  <div class="def"><b><code>78d5971</code> &mdash; TOR-9</b> &mdash; <code>load_baseline</code> now returns a typed <code>BaselineError</code> (new dataclass in <code>scanner/fingerprint.py</code>, distinct from <code>None</code>) for a baseline file that is unreadable, unparseable, missing a required field, or an unsupported <code>fingerprint_schema_version</code> &mdash; instead of an unhandled <code>JSONDecodeError</code>/<code>KeyError</code>. <code>server_side.on_list_tools</code> gained a parallel <code>baseline_error</code> audit path alongside <code>no_baseline</code>. This is Fixes 1&ndash;3 of MR-TQ-003 &sect;4.</div>
+  <div class="def"><b><code>a054e4a</code> &mdash; TOR-8 and TOR-11 markers</b> &mdash; <code>audit_summary</code> derives a per-target <code>drift_status</code> (latest session wins); <code>is_clean</code> is <code>False</code> whenever the latest session could not evaluate drift; the dashboard and detail page show a "DRIFT NOT EVALUATED" banner; a new <code>reports/drift-summary.json</code> sets <code>drift_evaluation</code> explicitly. The injection section gains a "not a qualified result" marker in all three report surfaces plus an <code>injection_check</code> field in the scan JSON. This is MR-TQ-003 &sect;5.</div>
+  <div class="def"><b><code>907c8a9</code> &mdash; TOR-4 and TOR-5 coverage</b> &mdash; the classifier cases MR-TQ-003 &sect;9 calls for: <code>tool_removed</code>, <code>input_schema</code> change, <code>annotations</code> change, and a several-fields-at-once change (<code>tests/test_drift_classification.py</code>). No behaviour change &mdash; the classifier already handled these; the cases make the evidence explicit.</div>
+
+  <h2><span class="sec">&sect;5</span> TOR status after verification, against MR-TQ-002 &sect;4</h2>
+  <div class="table-wrap"><table>
+    <tr><th>TOR</th><th>MR-TQ-002 &sect;4 status</th><th>Status now</th><th>What closed it</th></tr>
+    <tr><td>TOR-1&ndash;7</td><td>met (tests existed)</td><td><span class="tag pass">met</span></td><td>re-run as verification evidence; TOR-4/5 gap cases added (<code>907c8a9</code>)</td></tr>
+    <tr><td>TOR-8</td><td>partial &mdash; missing baseline logged, but a report in that state could be mistaken for clean</td><td><span class="tag pass">met</span></td><td><code>a054e4a</code>: banner, pill, <code>is_clean = False</code>, explicit <code>drift_evaluation</code> field</td></tr>
+    <tr><td>TOR-9</td><td>not met &mdash; unhandled exception in <code>load_baseline</code>, no schema gate</td><td><span class="tag pass">met</span></td><td><code>78d5971</code> + 8 verification cases</td></tr>
+    <tr><td>TOR-10</td><td>met</td><td><span class="tag pass">met</span></td><td>re-run as evidence, including on the new error path</td></tr>
+    <tr><td>TOR-11</td><td>partial &mdash; checks independent in code, but no report carried a "not qualified" marker</td><td><span class="tag pass">met</span></td><td><code>a054e4a</code>: marker in scan report, dashboard, detail page; <code>injection_check</code> field in scan JSON</td></tr>
+  </table></div>
+
+  <h2><span class="sec">&sect;6</span> Residual limitations</h2>
+  <ul>
+    <li><b>Independence.</b> Author, verifier, and notional applicant are the same person. A real program must have verification performed independently of development. Carried to MR-TQ-005.</li>
+    <li><b>Scope boundary (unchanged).</b> The fingerprint covers the <code>Tool</code> surface only. Resources, prompts, server-level instructions, and the content of tool-call results are not in the baseline and are covered by no TOR here. This verification does not extend the boundary &mdash; it is a real, scoped piece of future work (MR-TQ-002 &sect;5).</li>
+    <li><b>Environment-bound.</b> Verified only on Windows&nbsp;10.0.19045 / CPython&nbsp;3.13.5 / <code>mcp</code>&nbsp;2.1.1. Any change to a row in &sect;2 invalidates the result until re-verified. The SDK moved 2.0.0&nbsp;&rarr;&nbsp;2.1.1 since MR-TQ-002; the <code>Tool</code> model's client-visible field set was re-checked and is unchanged, and this is recorded rather than assumed.</li>
+    <li><b>Injection check not exercised live.</b> The prompt-injection check needs <code>ANTHROPIC_API_KEY</code> for a real verdict; only its "key not set" path runs in this suite. It is outside the qualified function regardless (TOR-11).</li>
+    <li><b>"Latest session wins."</b> <code>drift_status</code> reflects the most recent proxy session. A target with an old un-evaluated session but a working latest one reads as evaluated; the historical gap is retained as a count on the detail page, not surfaced on the card. Deliberate, and documented here.</li>
+  </ul>
+
+  <h2><span class="sec">&sect;7</span> Carried forward to MR-TQ-005</h2>
+  <ul>
+    <li>The verdict: whether the drift-detection function is qualified at TQL-5 for the credited use in MR-TQ-001 &sect;3, on the evidence in &sect;3.</li>
+    <li>The independence limitation (&sect;1, &sect;6), restated as a condition on any real use of this material.</li>
+    <li>The scope boundary (&sect;6) as an explicit statement of what a qualified "no drift" result does <i>not</i> cover.</li>
+    <li>Configuration management actions: tag <code>907c8a9</code> (or its successor, if the set is revised) as the qualified commit; record the SHA-256 of the credited assistant's baseline file under program CM (MR-TQ-003 &sect;6).</li>
+  </ul>
+
+</div>
+
+<div class="doc-footer">
+  <span>MR-TQ-004 &middot; mcp-ratchet DO-330 Tool Qualification Study</span>
+  <span>Rev 2026-08-29 &middot; Read Order 4 of 5</span>
+</div>

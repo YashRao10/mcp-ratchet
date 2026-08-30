@@ -336,6 +336,10 @@ tests/
                             problem per check, used to prove each check
                             actually fires against a real MCP connection —
                             not just a hand-built dict.
+
+qualification/       DO-330 tool-qualification study of the drift-detection
+                      function (5 docs + verification log) — see the section
+                      below.
 ```
 
 ## Dashboard
@@ -369,3 +373,19 @@ attributed — the actual proof that the "rug pull" premise this project is
 built on holds up against a real, live MCP connection, not a hand-built
 fixture. `tests/test_forward.py` proves the proxy's transparency
 requirement: its output is byte-identical to a direct connection's.
+
+## DO-330 tool qualification
+
+`qualification/` holds a worked DO-330 study of this repo's **deterministic
+drift-detection function** used as a configuration-integrity control for a
+credited AI verification tool in a DO-178C program — five documents
+(MR-TQ-001 … MR-TQ-005) covering the qualification trigger, the Tool
+Operational Requirements (TOR-1 … TOR-11), the plan, the executed
+verification, and an honest verdict: a **candidate for TQL-5 under Criteria
+3**, conditional on independent verification.
+
+The study is why `78d5971` (TOR-9 — a malformed baseline no longer crashes
+the proxy), `a054e4a` (TOR-8/TOR-11 report markers), and `907c8a9`
+(drift-classification test coverage) exist. Rendered PDFs in
+`qualification/docs/`, editable sources in `qualification/docs-source/`. The
+prompt-injection check is explicitly out of qualification scope.

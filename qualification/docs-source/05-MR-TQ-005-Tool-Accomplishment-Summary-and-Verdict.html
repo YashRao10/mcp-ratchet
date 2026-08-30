@@ -1,0 +1,147 @@
+<title>mcp-ratchet — Tool Accomplishment Summary &amp; Verdict</title>
+<meta charset="utf-8">
+<style>
+:root{
+  --bg:#0a0c0f; --panel:#131519; --ink:#f4f1e8; --ink-soft:#c7c2b2; --ink-faint:#8a8577;
+  --accent:#de9c47; --rule:#2a2d33; --rule-strong:#56543f;
+  --blue:#4a76a6; --teal:#45927c; --plum:#9070ac;
+  --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+  --head: Bahnschrift, "Segoe UI Semibold", sans-serif;
+  --body: Georgia, "Times New Roman", serif;
+}
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15.5px; line-height:1.55; margin:0;}
+body::before{content:'';position:fixed;inset:0;background:var(--bg);z-index:-1;}
+.page{max-width:760px;margin:0 auto;padding:48px 28px 80px;}
+.eyebrow{font-family:var(--head); letter-spacing:0.16em; text-transform:uppercase; font-size:11.5px; color:var(--accent); margin-bottom:6px;}
+h1{font-family:var(--head); font-weight:600; font-size:27px; color:var(--ink); margin:0 0 4px 0; letter-spacing:0.01em;}
+.subtitle{color:var(--ink-soft); font-size:13.5px; margin-bottom:22px;}
+.doc-meta{display:flex; gap:22px; flex-wrap:wrap; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:9px 0; margin-bottom:30px;}
+.doc-meta span b{color:var(--ink-soft); font-weight:normal;}
+h2{font-family:var(--head); font-weight:600; font-size:18px; color:var(--ink); margin:34px 0 12px 0; display:flex; align-items:baseline; gap:10px; break-after:avoid;}
+h2 .sec{font-family:var(--mono); font-size:13px; color:var(--accent); font-weight:normal;}
+h3{font-family:var(--head); font-weight:600; font-size:14.5px; color:var(--ink-soft); margin:20px 0 8px 0; text-transform:uppercase; letter-spacing:0.04em; break-after:avoid;}
+p{margin:0 0 12px 0;}
+ul,ol{margin:0 0 14px 0; padding-left:22px;}
+li{margin-bottom:5px; break-inside:avoid;}
+code{font-family:var(--mono); font-size:0.92em; color:var(--accent); background:var(--panel); padding:1px 5px; border-radius:3px;}
+.table-wrap{margin:10px 0 18px 0; break-inside:avoid;}
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{font-family:var(--head); font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-faint); background:var(--panel); text-align:left; padding:6px 9px; border:1px solid var(--rule-strong);}
+td{padding:6px 9px; border:1px solid var(--rule); color:var(--ink-soft); vertical-align:top;}
+td.center{text-align:center;}
+.callout{border-left:3px solid var(--accent); background:rgba(222,156,71,0.06); padding:10px 14px; margin:14px 0 18px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.callout .lead{font-family:var(--head); font-size:12px; letter-spacing:0.03em; text-transform:uppercase; color:var(--accent); margin-bottom:4px;}
+.callout.gap{border-left-color:#c0664f; background:rgba(192,102,79,0.08);}
+.callout.gap .lead{color:#c0664f;}
+.callout.ok{border-left-color:var(--teal); background:rgba(69,146,124,0.07);}
+.callout.ok .lead{color:var(--teal);}
+.def{border-left:3px solid var(--blue); background:var(--panel); padding:9px 13px; margin:12px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.def b{color:var(--ink); font-family:var(--head); font-weight:600; font-size:13px;}
+.tag{display:inline-block; font-family:var(--mono); font-size:10.5px; padding:1px 7px; border-radius:3px; border:1px solid; margin-right:4px;}
+.tag.pass{color:var(--teal); border-color:var(--teal);}
+.tag.gap{color:#c0664f; border-color:#c0664f;}
+.tag.warn{color:var(--accent); border-color:var(--accent);}
+.doc-footer{position:fixed; left:0; right:0; bottom:0; padding-top:4px; border-top:1px solid var(--rule); font-family:var(--mono); font-size:8.5px; letter-spacing:0.03em; color:var(--ink-faint); display:flex; justify-content:space-between;}
+@media screen{ .doc-footer{display:none;} }
+@media print{
+  @page{ size: 215.9mm 355.6mm; margin: 8mm 11mm 20mm 11mm; background: var(--bg); }
+  .page{ padding:0; max-width:none; }
+  body{ font-size:13px; line-height:1.38; }
+  h2{ margin:20px 0 8px 0; break-after:avoid; }
+  h3{ margin:13px 0 6px 0; break-after:avoid; }
+  .table-wrap, table, .callout, .def, li{ break-inside:avoid; }
+  .doc-footer{ display:flex; }
+}
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">HummingBird Technosys, Inc. &middot; DO-330 Tool Qualification Study</div>
+  <h1>mcp-ratchet &mdash; Tool Accomplishment Summary &amp; Verdict</h1>
+  <div class="subtitle">The closing statement: what was qualified, to what level, against what requirements, what the verification concluded, the conditions on any real use, and the residual limitations carried out of the study.</div>
+  <div class="doc-meta">
+    <span><b>Doc ID:</b> MR-TQ-005</span>
+    <span><b>Rev:</b> 2026-08-29</span>
+    <span><b>TQL:</b> 5 (Criteria 3)</span>
+    <span><b>Commit:</b> <code>907c8a9</code></span>
+    <span><b>Read Order:</b> 5 of 5</span>
+  </div>
+
+  <p style="break-inside:avoid">This is the tool-side equivalent of a Software Accomplishment Summary: the single document a reviewer reads to see what the qualification effort claims and on what basis. It closes the five-document study begun in MR-TQ-001. It introduces no new analysis &mdash; it states the result and the conditions attached to it.</p>
+
+  <h2><span class="sec">&sect;1</span> Identification</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td>Tool</td><td>mcp-ratchet &mdash; runtime tool-surface <b>drift-detection function only</b> (MR-TQ-001 &sect;3, &sect;6). The prompt-injection check is explicitly outside scope.</td></tr>
+    <tr><td>Qualified configuration item</td><td>mcp-ratchet at git commit <code>907c8a9</code>, with <code>FINGERPRINT_SCHEMA_VERSION = 1</code>.</td></tr>
+    <tr><td>Tool Qualification Level</td><td>TQL-5, from Criteria 3 (DO-178C 12.2.2), at any airborne software level (MR-TQ-001 &sect;5).</td></tr>
+    <tr><td>Operational environment</td><td>Windows 10 (10.0.19045) 64-bit &middot; CPython 3.13.5 &middot; <code>mcp</code> 2.1.1 (MR-TQ-002 &sect;2, as run in MR-TQ-004 &sect;2).</td></tr>
+    <tr><td>Requirements</td><td>TOR-1 through TOR-11 (MR-TQ-002 &sect;3).</td></tr>
+    <tr><td>Qualification data</td><td>MR-TQ-001 through MR-TQ-005, and the mcp-ratchet automated test suite at commit <code>907c8a9</code> (194 cases).</td></tr>
+  </table></div>
+
+  <h2><span class="sec">&sect;2</span> What the study did</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Doc</th><th>What it established</th><th>Outcome</th></tr>
+    <tr><td>MR-TQ-001</td><td>Operational scenario; the 12.2.1 qualification trigger; the 12.2.2 criteria.</td><td>Trigger met (could fail to detect an error). Criteria 3 &rarr; TQL-5. Injection check bounded out.</td></tr>
+    <tr><td>MR-TQ-002</td><td>Eleven falsifiable Tool Operational Requirements; the operational environment; an honest gap list against the source.</td><td>TOR-9 not met (crash on a bad baseline); TOR-8 and TOR-11 partial; TOR-1&ndash;7 and TOR-10 met.</td></tr>
+    <tr><td>MR-TQ-003</td><td>DO-330 process areas mapped to artifacts; a committed plan to close the gaps; configuration management; the independence limitation.</td><td>Plan accepted for this study. Fix and marker work scheduled before verification.</td></tr>
+    <tr><td>MR-TQ-004</td><td>Requirements-based verification, one or more cases per TOR, executed on the qualified environment.</td><td>All eleven TORs PASS at commit <code>907c8a9</code>. Three commits closed the gaps. 194 tests, 0 failures.</td></tr>
+    <tr><td>MR-TQ-005</td><td>This summary and the verdict.</td><td>&mdash;</td></tr>
+  </table></div>
+
+  <h2><span class="sec">&sect;3</span> Verification outcome</h2>
+  <p>Every Tool Operational Requirement has at least one passing requirements-based verification case at commit <code>907c8a9</code> (MR-TQ-004 &sect;3). The three requirements the source did not meet when MR-TQ-002 was written are closed by identified commits, each verified after the change:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Was</th><th>Requirement</th><th>Closed by</th><th>Now</th></tr>
+    <tr><td>not met</td><td>TOR-9 &mdash; unreadable / malformed / unsupported baseline handled explicitly, no crash</td><td><code>78d5971</code></td><td class="center"><span class="tag pass">met</span></td></tr>
+    <tr><td>partial</td><td>TOR-8 &mdash; a missing baseline never reads as "no drift"; machine-readable marker</td><td><code>a054e4a</code></td><td class="center"><span class="tag pass">met</span></td></tr>
+    <tr><td>partial</td><td>TOR-11 &mdash; injection check carries a visible "not a qualified result" marker</td><td><code>a054e4a</code></td><td class="center"><span class="tag pass">met</span></td></tr>
+    <tr><td>met</td><td>TOR-1&ndash;7, TOR-10 &mdash; surface capture, canonical match, add/remove/modify classification, no cosmetic suppression, determinism, transparency</td><td>re-verified; TOR-4/5 gap cases added in <code>907c8a9</code></td><td class="center"><span class="tag pass">met</span></td></tr>
+  </table></div>
+  <p>No open defect stands against any TOR.</p>
+
+  <h2><span class="sec">&sect;4</span> Verdict</h2>
+  <div class="callout ok">
+    <div class="lead">Verdict</div>
+    On the evidence in this study, mcp-ratchet's deterministic tool-surface drift-detection function, at commit <code>907c8a9</code>, meets Tool Operational Requirements TOR-1 through TOR-11 in the operational environment of MR-TQ-002 &sect;2, and is a defensible candidate for qualification at <b>TQL-5 under Criteria 3</b> &mdash; for the bounded use described in MR-TQ-001 &sect;3 and &sect;5: an <i>additional</i> automated configuration-integrity control on a separately-credited AI assistant, with human review of every drift alert and independent re-review of the assistant's interface retained on the program's normal configuration-management cadence.
+  </div>
+  <p>The verdict holds only while all of the following hold:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Condition</th><th>If it does not hold</th></tr>
+    <tr><td>Criteria 3 usage &mdash; mcp-ratchet is added on top of existing CM, not used to eliminate a manual interface re-review.</td><td>Using it to replace a manual review is Criteria 2 &mdash; TQL-4 at Levels A and B. Not worked in this study; needs its own plan and sign-off (MR-TQ-001 &sect;5).</td></tr>
+    <tr><td>The operational environment matches MR-TQ-002 &sect;2 exactly (OS, Python, SDK, schema version, commit).</td><td>Any row change invalidates the result until re-verified (MR-TQ-004 &sect;6).</td></tr>
+    <tr><td>The baseline file is held under the program's configuration management with a recorded SHA-256; a re-baseline is a separately authorised, logged act.</td><td>mcp-ratchet trusts the baseline file it is given &mdash; an unmanaged baseline is an unqualified input (MR-TQ-002 &sect;2, MR-TQ-003 &sect;6).</td></tr>
+    <tr><td>The prompt-injection check is treated as carrying no compliance credit.</td><td>Any credit taken for it is outside this qualification (TOR-11).</td></tr>
+  </table></div>
+  <div class="callout gap">
+    <div class="lead">The one condition this study cannot close itself</div>
+    The verification in MR-TQ-004 was performed by the tool's author. DO-330 expects the tool's qualification verification to be independent of its development (MR-TQ-003 &sect;7). Before this material is used on a real program, a reviewer independent of mcp-ratchet's development must repeat or confirm the MR-TQ-004 verification against commit <code>907c8a9</code>. Until that is done, the verdict above is a candidate, not a completed qualification.
+  </div>
+
+  <h2><span class="sec">&sect;5</span> Residual limitations carried out of the study</h2>
+  <ul>
+    <li><b>The ceiling on what this buys (MR-TQ-001 &sect;7).</b> A qualified "no drift" result means the assistant's advertised tool interface has not changed since it was qualified. It says nothing about whether the assistant's judgments are correct, it does not catch a change in model behaviour that leaves the interface untouched, and it is not a reason to skip independent human review of the assistant's output.</li>
+    <li><b>Surface coverage (MR-TQ-002 &sect;5).</b> The fingerprint captures the client-visible fields of the MCP <code>Tool</code> object. It does not capture server resources, prompts, server-level instructions, or the content of tool-call results &mdash; any of which can also steer a model. Extending the fingerprint to those is real, scoped future work; it is not done here and not claimed.</li>
+    <li><b>SDK-version sensitivity.</b> Qualified against <code>mcp</code> 2.1.1. A future SDK that adds a client-visible field to the <code>Tool</code> model requires a TOR-1 update and re-verification. The 2.0.0&nbsp;&rarr;&nbsp;2.1.1 move was checked and left the field set unchanged (MR-TQ-004 &sect;6).</li>
+  </ul>
+
+  <h2><span class="sec">&sect;6</span> Configuration management record</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Identification</th><th>Status / action</th></tr>
+    <tr><td>Qualified tool</td><td>mcp-ratchet @ <code>907c8a9</code>, <code>FINGERPRINT_SCHEMA_VERSION = 1</code></td><td><span class="tag warn">action</span> tag this commit in the repository as the qualified commit. Not yet done &mdash; the repository is currently local-only; the tag is applied when a hosting/CM decision is made.</td></tr>
+    <tr><td>Baseline file</td><td><code>baselines/&lt;slug&gt;.json</code> for the credited assistant, plus a recorded SHA-256</td><td><span class="tag warn">action</span> created and hashed at the point a real program adopts this control. Not an artifact of this study.</td></tr>
+    <tr><td>Qualification data</td><td>MR-TQ-001 &ndash; MR-TQ-005; the test suite at <code>907c8a9</code></td><td>Revisions are additive; a superseded revision is retained. The <code>Read Order</code> tags are updated across the set if a document is inserted.</td></tr>
+  </table></div>
+
+  <h2><span class="sec">&sect;7</span> Closing statement</h2>
+  <p>This study does not show that AI tools can be safely qualified for DO-178C credit. It shows that one specific, deterministic guardrail around such a tool &mdash; a fingerprint-and-compare check on the tool's advertised interface &mdash; can itself be qualified at the lowest tool qualification level, cheaply, against falsifiable requirements, with an honest account of the three source defects that had to be fixed to get there. The guardrail's value is bounded: it holds the edges of an existing qualification stable; it does not establish one. The single item left open is independent verification of the results in MR-TQ-004.</p>
+
+</div>
+
+<div class="doc-footer">
+  <span>MR-TQ-005 &middot; mcp-ratchet DO-330 Tool Qualification Study</span>
+  <span>Rev 2026-08-29 &middot; Read Order 5 of 5</span>
+</div>

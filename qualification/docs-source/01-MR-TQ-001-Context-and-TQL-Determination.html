@@ -1,0 +1,179 @@
+<title>mcp-ratchet — Tool Qualification Context &amp; TQL Determination</title>
+<meta charset="utf-8">
+<style>
+:root{
+  --bg:#0a0c0f; --panel:#131519; --ink:#f4f1e8; --ink-soft:#c7c2b2; --ink-faint:#8a8577;
+  --accent:#de9c47; --rule:#2a2d33; --rule-strong:#56543f;
+  --blue:#4a76a6; --teal:#45927c; --plum:#9070ac;
+  --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+  --head: Bahnschrift, "Segoe UI Semibold", sans-serif;
+  --body: Georgia, "Times New Roman", serif;
+}
+*{box-sizing:border-box;}
+html{background:var(--bg);}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15.5px; line-height:1.55; margin:0;}
+body::before{content:'';position:fixed;inset:0;background:var(--bg);z-index:-1;}
+.page{max-width:760px;margin:0 auto;padding:48px 28px 80px;}
+.eyebrow{font-family:var(--head); letter-spacing:0.16em; text-transform:uppercase; font-size:11.5px; color:var(--accent); margin-bottom:6px;}
+h1{font-family:var(--head); font-weight:600; font-size:27px; color:var(--ink); margin:0 0 4px 0; letter-spacing:0.01em;}
+.subtitle{color:var(--ink-soft); font-size:13.5px; margin-bottom:22px;}
+.doc-meta{display:flex; gap:22px; flex-wrap:wrap; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:9px 0; margin-bottom:30px;}
+.doc-meta span b{color:var(--ink-soft); font-weight:normal;}
+h2{font-family:var(--head); font-weight:600; font-size:18px; color:var(--ink); margin:34px 0 12px 0; display:flex; align-items:baseline; gap:10px; break-after:avoid;}
+h2 .sec{font-family:var(--mono); font-size:13px; color:var(--accent); font-weight:normal;}
+h3{font-family:var(--head); font-weight:600; font-size:14.5px; color:var(--ink-soft); margin:20px 0 8px 0; text-transform:uppercase; letter-spacing:0.04em; break-after:avoid;}
+p{margin:0 0 12px 0;}
+ul,ol{margin:0 0 14px 0; padding-left:22px;}
+li{margin-bottom:5px; break-inside:avoid;}
+code{font-family:var(--mono); font-size:0.92em; color:var(--accent); background:var(--panel); padding:1px 5px; border-radius:3px;}
+.table-wrap{margin:10px 0 18px 0; break-inside:avoid;}
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{font-family:var(--head); font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-faint); background:var(--panel); text-align:left; padding:6px 9px; border:1px solid var(--rule-strong);}
+td{padding:6px 9px; border:1px solid var(--rule); color:var(--ink-soft); vertical-align:top;}
+td.center{text-align:center;}
+.callout{border-left:3px solid var(--accent); background:rgba(222,156,71,0.06); padding:10px 14px; margin:14px 0 18px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.callout .lead{font-family:var(--head); font-size:12px; letter-spacing:0.03em; text-transform:uppercase; color:var(--accent); margin-bottom:4px;}
+.callout.gap{border-left-color:#c0664f; background:rgba(192,102,79,0.08);}
+.callout.gap .lead{color:#c0664f;}
+.callout.ok{border-left-color:var(--teal); background:rgba(69,146,124,0.07);}
+.callout.ok .lead{color:var(--teal);}
+.def{border-left:3px solid var(--blue); background:var(--panel); padding:9px 13px; margin:12px 0; border-radius:0 4px 4px 0; break-inside:avoid;}
+.def b{color:var(--ink); font-family:var(--head); font-weight:600; font-size:13px;}
+.tag{display:inline-block; font-family:var(--mono); font-size:10.5px; padding:1px 7px; border-radius:3px; border:1px solid; margin-right:4px;}
+.tag.pass{color:var(--teal); border-color:var(--teal);}
+.tag.gap{color:#c0664f; border-color:#c0664f;}
+.tag.warn{color:var(--accent); border-color:var(--accent);}
+.flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0 18px 0; break-inside:avoid;}
+.flow .pill{font-family:var(--mono); font-size:11px; color:var(--ink-soft); border:1px solid var(--rule-strong); border-radius:4px; padding:4px 9px; background:var(--panel);}
+.flow .flow-sep{color:var(--accent);}
+.doc-footer{position:fixed; left:0; right:0; bottom:0; padding-top:4px; border-top:1px solid var(--rule); font-family:var(--mono); font-size:8.5px; letter-spacing:0.03em; color:var(--ink-faint); display:flex; justify-content:space-between;}
+@media screen{ .doc-footer{display:none;} }
+@media print{
+  @page{ size: 215.9mm 355.6mm; margin: 8mm 11mm 20mm 11mm; background: var(--bg); }
+  .page{ padding:0; max-width:none; }
+  body{ font-size:13px; line-height:1.38; }
+  h2{ margin:20px 0 8px 0; break-after:avoid; }
+  h3{ margin:13px 0 6px 0; break-after:avoid; }
+  .table-wrap, table, .callout, .def, li, .flow{ break-inside:avoid; }
+  .doc-footer{ display:flex; }
+}
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">HummingBird Technosys, Inc. &middot; DO-330 Tool Qualification Study</div>
+  <h1>mcp-ratchet &mdash; Tool Qualification Context &amp; TQL Determination</h1>
+  <div class="subtitle">Establishing the operational scenario, deciding whether the tool needs qualification at all, and determining its Tool Qualification Level before any qualification work begins.</div>
+  <div class="doc-meta">
+    <span><b>Doc ID:</b> MR-TQ-001</span>
+    <span><b>Rev:</b> 2026-08-29</span>
+    <span><b>Tool under study:</b> mcp-ratchet, drift-detection function</span>
+    <span><b>Result:</b> Candidate TQL-5, scope bounded to the deterministic function</span>
+    <span><b>Read Order:</b> 1 of 5</span>
+  </div>
+
+  <p style="break-inside:avoid">This study works one question end to end: if a DO-178C program wants to lean on an AI assistant during verification, and wants a drift monitor watching that assistant's interface, what does DO-330 require of the drift monitor? This first document does not qualify anything. It fixes the scenario, applies the DO-178C 12.2 qualification trigger, and lands on a candidate Tool Qualification Level so the later documents have a target to work against. Everything here is a proposal for a human with compliance authority to accept, revise, or reject.</p>
+
+  <h2><span class="sec">&sect;1</span> What this document is, and is not</h2>
+  <p>DO-330 (<i>Software Tool Qualification Considerations</i>) is the standalone RTCA document that DO-178C section 12.2 points to for <i>how</i> to qualify a tool once you have decided one is needed. The full text is paywalled. This study does not reproduce it and does not assert specific per-TQL objective counts from its tables. TQL-determination criteria below are cited from named secondary sources and cross-checked against the sibling <code>AAS-TQ-002</code> study, which corrected its own earlier misread of the same table.</p>
+  <ul>
+    <li><b>In scope:</b> the operational scenario, the 12.2.1 qualification trigger, the 12.2.2 criteria, a candidate TQL, and an explicit scope boundary around which part of mcp-ratchet is being considered.</li>
+    <li><b>Not in scope here:</b> the Tool Operational Requirements themselves (MR-TQ-002), the qualification plan (MR-TQ-003), verification (MR-TQ-004), and the final verdict (MR-TQ-005).</li>
+    <li><b>Never in scope:</b> qualifying the underlying AI assistant. That is a separate, harder effort. This study is about the <i>monitor</i>, not the thing it monitors.</li>
+  </ul>
+
+  <h2><span class="sec">&sect;2</span> The operational scenario</h2>
+  <p>A DO-178C development or verification activity uses one or more AI assistants exposed as MCP servers. A concrete example: an LLM-backed agent that, given a low-level requirement and its implementing source function, proposes whether the two correspond and flags requirements it judges untestable, for a human reviewer to confirm or overturn. Suppose the program elects to <i>credit</i> this assistant &mdash; that is, to use its output to reduce the manual effort in a DO-178C process rather than treating it as a convenience with no compliance weight. Under 12.2.1 that assistant now requires qualification.</p>
+
+  <div class="def"><b>The MCP-specific hazard</b> &mdash; An MCP server advertises its capabilities as a set of <i>tool definitions</i>: each tool's name, natural-language description, and input schema. A server can change these definitions at any time, including after a human has reviewed and approved them. This is a documented attack and failure class (informally, a "rug pull"). If the credited assistant's advertised interface changes after qualification, the tool in use is no longer the tool that was qualified &mdash; and nothing in a normal review workflow surfaces that.</div>
+
+  <p style="break-inside:avoid">The program's response is to place a <b>configuration-integrity control</b> on the credited assistant: capture an exact fingerprint of its tool surface at qualification time, and thereafter verify on every use that the deployed surface still matches. mcp-ratchet is the tool proposed for that control.</p>
+
+  <h2><span class="sec">&sect;3</span> mcp-ratchet's role and its output claims</h2>
+  <p>mcp-ratchet has several functions. This study considers <b>only its runtime drift-detection function</b>: it records a canonical fingerprint of every tool a server advertises (name, description, input schema) at a chosen baseline moment, and on later runs reports, per tool, whether the current definition matches that baseline or has drifted. The fingerprint-and-compare logic is fully deterministic &mdash; the same inputs always produce the same verdict.</p>
+  <div class="flow">
+    <span class="pill">qualified assistant</span>
+    <span class="flow-sep">&rarr;</span>
+    <span class="pill">baseline fingerprint captured at qualification</span>
+    <span class="flow-sep">&rarr;</span>
+    <span class="pill">mcp-ratchet compares live surface on each use</span>
+    <span class="flow-sep">&rarr;</span>
+    <span class="pill">"matches" / "drift in tool X" &rarr; human</span>
+  </div>
+  <p>The output claim the program would rely on is narrow and testable:</p>
+  <div class="def"><b>Reliance claim</b> &mdash; When mcp-ratchet reports "no drift" for a server against a stored baseline, every tool definition that server currently advertises is byte-for-byte equivalent, after canonicalization, to the definition captured in that baseline.</div>
+  <p>Its contrapositive is the safety-relevant half: a real change to any advertised tool definition must produce a "drift" report, not a "no drift" report. A false "no drift" is the failure that matters.</p>
+
+  <h2><span class="sec">&sect;4</span> Does mcp-ratchet require qualification?</h2>
+  <p>DO-178C 12.2.1 asks two things: is a tool's output used to eliminate, reduce, or automate a DO-178C process, and could the tool then either insert an error into the airborne software or fail to detect an existing error. Applied here:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Question</th><th>For mcp-ratchet's drift-detection function</th></tr>
+    <tr><td>Does its output automate or reduce a DO-178C process?</td><td>Yes. If the program credits the AI assistant, it must show the assistant stays in its qualified configuration. Crediting mcp-ratchet's "no drift" output to make that showing automates part of the configuration-management / integrity-verification activity for a qualified tool.</td></tr>
+    <tr><td>Could it insert an error into the airborne software?</td><td>No. Its output never becomes part of, or directly shapes, the airborne software. It reports on another tool's interface.</td></tr>
+    <tr><td>Could it fail to detect an error?</td><td>Yes. A false "no drift" would let a changed, no-longer-qualified assistant configuration keep receiving qualification credit. The error &mdash; an invalid qualification basis &mdash; goes undetected.</td></tr>
+  </table></div>
+  <div class="callout">
+    <div class="lead">Trigger met</div>
+    The drift-detection function is used to reduce a DO-178C process and could fail to detect an error. It requires qualification. The remaining question is at what level.
+  </div>
+  <p style="break-inside:avoid">One honest caveat: whether the trigger fires at all depends entirely on the program <i>choosing</i> to credit the AI assistant. A program that uses the assistant purely as an unremarked convenience, with every output independently re-derived by a human, credits nothing and qualifies nothing &mdash; neither the assistant nor mcp-ratchet. This study assumes the program does credit the assistant, because that is the only case where any of this matters.</p>
+
+  <h2><span class="sec">&sect;5</span> Qualification criteria and candidate TQL</h2>
+  <p>DO-178C 12.2.2 sorts qualifying tools into three criteria; the criterion plus the software level of the airborne code sets the TQL. The mapping below is reproduced from named secondary sources (Rapita Systems; LegalClarity) and matches the corrected table in <code>AAS-TQ-002 &sect;1</code>. The exact numbered objective list per TQL is DO-330 table content and is not reproduced.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Criteria</th><th>TQL @ A</th><th>TQL @ B</th><th>TQL @ C</th><th>TQL @ D</th></tr>
+    <tr><td>1 &mdash; output could insert an error into the airborne software</td><td class="center">TQL-1</td><td class="center">TQL-2</td><td class="center">TQL-3</td><td class="center">TQL-4</td></tr>
+    <tr><td>2 &mdash; could fail to detect an error, <i>and</i> its output justifies eliminating or reducing a process other than the one it automates</td><td class="center">TQL-4</td><td class="center">TQL-4</td><td class="center">TQL-5</td><td class="center">TQL-5</td></tr>
+    <tr><td>3 &mdash; could fail to detect an error</td><td class="center">TQL-5</td><td class="center">TQL-5</td><td class="center">TQL-5</td><td class="center">TQL-5</td></tr>
+  </table></div>
+  <p><b>Not Criteria 1.</b> &sect;4 already established mcp-ratchet's output does not enter the airborne software.</p>
+  <p><b>Criteria 2 or Criteria 3</b> turns on a single question: does mcp-ratchet's output justify eliminating or reducing <i>a different process</i>, or is it an additional check layered on top of processes that stay in place?</p>
+  <div class="table-wrap"><table>
+    <tr><th>How the program uses mcp-ratchet</th><th>Criterion</th><th>TQL (Level A&ndash;D)</th></tr>
+    <tr><td>Replaces a manual re-review of the assistant's interface that the program would otherwise perform on each use</td><td class="center">2</td><td class="center">TQL-4 / TQL-4 / TQL-5 / TQL-5</td></tr>
+    <tr><td>Added <i>on top of</i> existing configuration management; a human still independently reviews the assistant's interface on the program's normal CM cadence</td><td class="center">3</td><td class="center">TQL-5 at every level</td></tr>
+  </table></div>
+  <div class="callout ok">
+    <div class="lead">Candidate: Criteria 3, TQL-5</div>
+    This study proposes the program use mcp-ratchet as an <i>additional</i> automated control, not a replacement for any manual process. A human still reviews every drift alert, and the assistant's interface is still independently re-reviewed on the program's normal configuration-management schedule. Under that usage mcp-ratchet stays at Criteria 3, which is TQL-5 regardless of the airborne software level. MR-TQ-003 onward is written to the TQL-5 target.
+  </div>
+  <div class="callout gap">
+    <div class="lead">If the program wants the Criteria 2 usage instead</div>
+    Using mcp-ratchet to eliminate a manual interface re-review moves it to Criteria 2, which is TQL-4 at Levels A and B &mdash; a materially heavier qualification. That path is not worked in this study. It would need its own plan and sign-off from whoever holds compliance authority on the program.
+  </div>
+
+  <h2><span class="sec">&sect;6</span> Scope boundary &mdash; the deterministic function only</h2>
+  <p>mcp-ratchet also runs a prompt-injection check on tool descriptions. That check makes a live call to a large language model and asks it to judge whether a description contains text aimed at manipulating the agent reading it. It is useful, but it is <b>not deterministic</b>: the same description can draw a different verdict on different runs, and the model's behavior can change under the tool author's feet.</p>
+  <div class="callout gap">
+    <div class="lead">The injection check is excluded from qualification scope</div>
+    A tool's qualified function has to be verifiable against fixed Tool Operational Requirements. A check whose output is not reproducible cannot meet that bar. This study qualifies the fingerprint-and-compare drift-detection function and nothing else. The injection check may still run operationally &mdash; it just carries no qualification credit, and MR-TQ-002's requirements will say so explicitly.
+  </div>
+  <p style="break-inside:avoid">This is the same discipline the sibling <code>AAS-TQ-002</code> used when it bounded its scope to <code>gcov</code> and explicitly left <code>gcc</code> out: a qualification argument only holds for the exact function you wrote requirements for and verified, never for "the tool" as a loose whole.</p>
+
+  <h2><span class="sec">&sect;7</span> What a configuration-integrity control does and does not buy</h2>
+  <p>It is worth being blunt about the ceiling on this work, so the later documents are not oversold.</p>
+  <div class="table-wrap"><table>
+    <tr><th>A qualified drift monitor gives you</th><th>It does not give you</th></tr>
+    <tr><td>Assurance that the credited assistant's advertised interface has not changed since it was qualified</td><td>Any assurance about whether the assistant's <i>judgments</i> are correct &mdash; that is the underlying tool's own qualification problem</td></tr>
+    <tr><td>A defined, testable trigger for re-qualification when the interface does change</td><td>Protection against a change in the model's behavior that leaves the advertised interface untouched</td></tr>
+    <tr><td>A deterministic, reproducible check that fits inside a normal TQL-5 effort</td><td>A reason to skip independent human review of the assistant's output</td></tr>
+  </table></div>
+  <div class="callout">
+    <div class="lead">The honest framing</div>
+    This study does not show that AI tools can be safely qualified for DO-178C credit. It shows that <i>one specific, deterministic guardrail</i> around such a tool can itself be qualified cheaply, and that the guardrail's value is bounded to holding the edges of an existing qualification &mdash; not to establishing one.
+  </div>
+
+  <h2><span class="sec">&sect;8</span> Carried forward to MR-TQ-002</h2>
+  <ul>
+    <li>Write Tool Operational Requirements for the drift-detection function: what "match" and "drift" mean precisely, what canonicalization is applied before comparison, and the required behavior when a baseline is missing, malformed, or partially readable.</li>
+    <li>State explicitly, as a requirement, that the injection check carries no qualification credit.</li>
+    <li>Define the operational environment the tool must be qualified in &mdash; OS, Python version, how the baseline file is stored and protected, who may update it.</li>
+    <li>Identify the one genuinely AI-shaped verification problem that remains even at TQL-5: showing the fingerprint captures <i>everything</i> a model could act on in a tool definition, not just the fields mcp-ratchet currently reads.</li>
+  </ul>
+
+</div>
+
+<div class="doc-footer">
+  <span>MR-TQ-001 &middot; mcp-ratchet DO-330 Tool Qualification Study</span>
+  <span>Rev 2026-08-29 &middot; Read Order 1 of 5</span>
+</div>

@@ -1,6 +1,6 @@
 {
   "schema_version": "mcp-ratchet-drift-summary/1",
-  "generated_at": "2026-08-30T05:31:06.495830+00:00",
+  "generated_at": "2026-08-30T07:23:25.414227+00:00",
   "targets": [
     {
       "slug": "personal-financial-analysis",
@@ -10,8 +10,8 @@
       "blocked_call_count": 0,
       "no_baseline_session_count": 0,
       "baseline_error_session_count": 0,
-      "call_count": 32,
-      "session_count": 34,
+      "call_count": 35,
+      "session_count": 37,
       "scan_is_clean": true
     },
     {
