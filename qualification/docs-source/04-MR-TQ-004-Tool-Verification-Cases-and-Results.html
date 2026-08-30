@@ -54,7 +54,11 @@ td.center{text-align:center;}
   body{ font-size:13px; line-height:1.38; }
   h2{ margin:20px 0 8px 0; break-after:avoid; }
   h3{ margin:13px 0 6px 0; break-after:avoid; }
-  .table-wrap, table, .callout, .def, li{ break-inside:avoid; }
+  .table-wrap, .callout, .def, li{ break-inside:avoid; }
+  /* the per-TOR table is taller than a page — let it break BETWEEN rows,
+     but never mid-row (a split row overlaps the fixed footer). */
+  table{ break-inside:auto; }
+  tr, td, th{ break-inside:avoid; }
   .doc-footer{ display:flex; }
 }
 </style>
@@ -66,7 +70,7 @@ td.center{text-align:center;}
   <div class="subtitle">The executed operational verification: one or more requirements-based cases per Tool Operational Requirement, run on the qualified environment, with recorded results and the code changes the verification drove.</div>
   <div class="doc-meta">
     <span><b>Doc ID:</b> MR-TQ-004</span>
-    <span><b>Rev:</b> 2026-08-29</span>
+    <span><b>Rev:</b> 2026-08-30</span>
     <span><b>TQL:</b> 5</span>
     <span><b>Verified commit:</b> mcp-ratchet <code>907c8a9</code></span>
     <span><b>Read Order:</b> 4 of 5</span>
@@ -115,7 +119,7 @@ td.center{text-align:center;}
 
     <tr><td>TOR-3</td><td>A tool on the current surface but not the baseline &rarr; drift, identified as added.</td>
       <td><code>test_drift.py</code>: <code>new_tool_added_between_two_runs_is_flagged_as_tool_added</code> (live subprocess: baseline the toy server, add a tool to its source, reconnect)</td>
-      <td>Exactly one <code>tool_added</code> event, <code>tool_name</code> = the added tool. No other tool flagged.</td>
+      <td>Exactly one drift event of any kind (<code>assert len(events) == 1</code>), of type <code>tool_added</code>, <code>tool_name</code> = the added tool. Nothing else flagged.</td>
       <td class="center"><span class="tag pass">PASS</span></td></tr>
 
     <tr><td>TOR-4</td><td>A tool in the baseline but not on the current surface &rarr; drift, identified as removed.</td>
@@ -125,7 +129,7 @@ td.center{text-align:center;}
 
     <tr><td>TOR-5</td><td>A tool in both whose canonical forms differ &rarr; drift, naming the tool and each changed field with baseline and current values.</td>
       <td><code>test_drift.py</code>: <code>description_change_between_two_runs_is_flagged_as_drift</code> (live). <code>test_drift_classification.py</code>: <code>input_schema_change_is_flagged_as_schema_changed</code>, <code>annotations_change_is_flagged_as_annotations_changed</code>, <code>multiple_fields_changing_at_once_each_reported</code></td>
-      <td>Field-level classification correct for description, <code>input_schema</code>, and <code>annotations</code>. A change touching three fields at once emits one event per field, each naming the tool and carrying distinct baseline and current hashes. The <code>detail</code> string carries the changed values.</td>
+      <td>Field-level classification correct for description, <code>input_schema</code>, and <code>annotations</code>. A change touching three fields at once emits <b>exactly</b> one event per changed field (the multi-field test asserts the sorted event-type list equals the three expected kinds &mdash; no more, no fewer), each naming the tool and carrying distinct baseline and current hashes. The <code>detail</code> string carries the changed values.</td>
       <td class="center"><span class="tag pass">PASS</span></td></tr>
 
     <tr><td>TOR-6</td><td>A whitespace-only difference may be labelled as such but is still reported as drift; no heuristic turns a real difference into "no drift".</td>
@@ -149,8 +153,8 @@ td.center{text-align:center;}
       <td class="center"><span class="tag pass">PASS</span> <span style="color:var(--ink-faint)">(was not met)</span></td></tr>
 
     <tr><td>TOR-10</td><td>Drift detection does not alter what the client receives; the real <code>tools/list</code> result is forwarded unmodified.</td>
-      <td><code>test_forward.py</code>: <code>forward_list_tools_matches_direct_connection_exactly</code>, <code>forward_call_tool_returns_real_result_unmodified</code>. <code>test_server_side.py</code>: <code>monitor_mode_still_forwards_a_drifted_tool_call_by_default</code>. <code>test_baseline_error.py</code> asserts the real surface is forwarded even on the error path.</td>
-      <td>The forwarded <code>tools/list</code> byte-matches a direct downstream connection. Neither a detected drift nor a skipped evaluation edits the forwarded result.</td>
+      <td><code>test_forward.py</code>: <code>forward_list_tools_is_byte_identical_to_direct</code> (added 2026-08-30), <code>forward_list_tools_matches_direct_connection_exactly</code>, <code>forward_call_tool_returns_real_result_unmodified</code>. <code>test_server_side.py</code>: <code>monitor_mode_still_forwards_a_drifted_tool_call_by_default</code>. <code>test_baseline_error.py</code> asserts the real surface is forwarded even on the error path.</td>
+      <td>The forwarded <code>tools/list</code>, serialised field-for-field with the canonical dump the fingerprint uses (name / title / description / input_schema / output_schema / annotations / icons / meta), is <b>byte-identical</b> to a direct downstream connection &mdash; not just equal on name and description. A forwarded tool call returns content identical to a direct call. Neither a detected drift nor a skipped evaluation edits the forwarded result.</td>
       <td class="center"><span class="tag pass">PASS</span></td></tr>
 
     <tr><td>TOR-11</td><td>The prompt-injection check is outside the qualified function; its output is never represented as a qualified result and never affects the drift result.</td>
@@ -161,7 +165,7 @@ td.center{text-align:center;}
 
   <div class="callout ok">
     <div class="lead">Result</div>
-    All eleven TORs have at least one passing verification case at commit <code>907c8a9</code>. 44 cases across the seven cited test files; 194 in the full suite; 0 failures.
+    All eleven TORs have at least one passing verification case at commit <code>907c8a9</code>. 45 cases across the seven cited test files (44 at the original Rev 2026-08-29; one added at Rev 2026-08-30, see &sect;8); 195 in the full suite; 0 failures.
   </div>
 
   <h2><span class="sec">&sect;4</span> Code changes this verification drove</h2>
@@ -189,10 +193,32 @@ td.center{text-align:center;}
     <li><b>"Latest session wins."</b> <code>drift_status</code> reflects the most recent proxy session. A target with an old un-evaluated session but a working latest one reads as evaluated; the historical gap is retained as a count on the detail page, not surfaced on the card. Deliberate, and documented here.</li>
   </ul>
 
-  <h2><span class="sec">&sect;7</span> Carried forward to MR-TQ-005</h2>
+  <h2><span class="sec">&sect;7</span> Independent verification (Rev 2026-08-30)</h2>
+  <p>A reviewer with no prior involvement in this repository's code or documents re-executed the whole of &sect;3 against a clean checkout of commit <code>907c8a9</code> &mdash; the independence step MR-TQ-005 &sect;4 calls for. Method: check the environment against &sect;2, run <code>python -m pytest -q</code>, and for every TOR resolve each named test, run it in isolation, and read its source to confirm it asserts what the "Recorded result" column claims &mdash; adversarially, looking for prose that outruns the evidence.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Checked</th><th>Result</th></tr>
+    <tr><td>Environment (&sect;2)</td><td>Matches on every row (Windows 10.0.19045, CPython 3.13.5, <code>mcp</code> 2.1.1, schema version 1).</td></tr>
+    <tr><td>Full suite</td><td><code>194 passed, 0 failed, 0 skipped</code> at the reviewed commit &mdash; exactly as &sect;2 claimed.</td></tr>
+    <tr><td>Counts (44 / 8)</td><td>Confirmed by <code>pytest --co</code>.</td></tr>
+    <tr><td>Commits <code>78d5971</code> / <code>a054e4a</code> / <code>907c8a9</code></td><td>All real; file footprints as &sect;4 describes.</td></tr>
+    <tr><td>Per-TOR assertions</td><td>Every TOR has a genuine passing case. TOR-9 rated "best-evidenced &mdash; the test asserts exactly the claim." No dishonesty: the independence limitation and the untested injection check are both disclosed, not hidden.</td></tr>
+  </table></div>
+  <div class="callout gap">
+    <div class="lead">What the review found &mdash; and what this revision did about it</div>
+    The reviewer's verdict was <b>"holds with minor caveats"</b>: five places where the "Recorded result" prose claimed more than the cited test literally asserted, each verified correct by source inspection but not by a test. This revision closes the three that a test can close:
+    <ul style="margin-top:8px">
+      <li><b>TOR-10</b> &mdash; "byte-matches a direct connection" was backed only by a name+description comparison. Added <code>test_forward_list_tools_is_byte_identical_to_direct</code>, which serialises both tool lists with the fingerprint's canonical dump (all eight fields) and asserts equal bytes, and strengthened the call-tool test to compare against a real direct call.</li>
+      <li><b>TOR-3 / TOR-5</b> &mdash; the "nothing else drifted" / "one event per field" claims are now pinned by exact <code>len(events)</code> / exact event-set assertions, not just membership checks.</li>
+    </ul>
+    Two caveats are <b>accepted as source-backed, not test-backed</b>, and stated as such here: TOR-1's eight-field canonical enumeration (it is <code>scanner/fingerprint.py</code>'s <code>_TOOL_FIELDS</code> tuple, read directly) and TOR-11's "the injection verdict never enters the drift result" (an architectural separation visible in the code, not exercised by a test). The SDK 2.0.0&rarr;2.1.1 field-set re-check (&sect;2, &sect;6) is likewise an author assertion with no cited artifact.
+  </div>
+  <p style="break-inside:avoid">Post-revision the cited-file count is 45 and the full suite is 195; the reviewed-commit figures (44 / 194) are retained above as the record of what the independent pass actually re-executed. The reviewer noted that the &sect;4/&sect;5 independence condition &mdash; a <i>named human</i> reviewer on a real program &mdash; remains the governing open item; this pass was a cold re-execution and adversarial read, which substantively addresses "independent of development" but is not a substitute for program-level QA sign-off.</p>
+
+  <h2 style="break-before:page"><span class="sec">&sect;8</span> Carried forward to MR-TQ-005</h2>
   <ul>
     <li>The verdict: whether the drift-detection function is qualified at TQL-5 for the credited use in MR-TQ-001 &sect;3, on the evidence in &sect;3.</li>
-    <li>The independence limitation (&sect;1, &sect;6), restated as a condition on any real use of this material.</li>
+    <li>The independence limitation (&sect;1, &sect;6, &sect;7): a cold re-execution and adversarial review was done at Rev 2026-08-30 (&sect;7); a named human reviewer on a real program is still required.</li>
+    <li>The three evidence-precision caveats the review left open as source-backed (TOR-1 field list, TOR-11 code separation, the SDK re-check), restated in MR-TQ-005 as accepted limitations.</li>
     <li>The scope boundary (&sect;6) as an explicit statement of what a qualified "no drift" result does <i>not</i> cover.</li>
     <li>Configuration management actions: tag <code>907c8a9</code> (or its successor, if the set is revised) as the qualified commit; record the SHA-256 of the credited assistant's baseline file under program CM (MR-TQ-003 &sect;6).</li>
   </ul>
@@ -201,5 +227,5 @@ td.center{text-align:center;}
 
 <div class="doc-footer">
   <span>MR-TQ-004 &middot; mcp-ratchet DO-330 Tool Qualification Study</span>
-  <span>Rev 2026-08-29 &middot; Read Order 4 of 5</span>
+  <span>Rev 2026-08-30 &middot; Read Order 4 of 5</span>
 </div>

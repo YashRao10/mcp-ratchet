@@ -63,7 +63,7 @@ td.center{text-align:center;}
   <div class="subtitle">The closing statement: what was qualified, to what level, against what requirements, what the verification concluded, the conditions on any real use, and the residual limitations carried out of the study.</div>
   <div class="doc-meta">
     <span><b>Doc ID:</b> MR-TQ-005</span>
-    <span><b>Rev:</b> 2026-08-29</span>
+    <span><b>Rev:</b> 2026-08-30</span>
     <span><b>TQL:</b> 5 (Criteria 3)</span>
     <span><b>Commit:</b> <code>907c8a9</code></span>
     <span><b>Read Order:</b> 5 of 5</span>
@@ -88,7 +88,7 @@ td.center{text-align:center;}
     <tr><td>MR-TQ-001</td><td>Operational scenario; the 12.2.1 qualification trigger; the 12.2.2 criteria.</td><td>Trigger met (could fail to detect an error). Criteria 3 &rarr; TQL-5. Injection check bounded out.</td></tr>
     <tr><td>MR-TQ-002</td><td>Eleven falsifiable Tool Operational Requirements; the operational environment; an honest gap list against the source.</td><td>TOR-9 not met (crash on a bad baseline); TOR-8 and TOR-11 partial; TOR-1&ndash;7 and TOR-10 met.</td></tr>
     <tr><td>MR-TQ-003</td><td>DO-330 process areas mapped to artifacts; a committed plan to close the gaps; configuration management; the independence limitation.</td><td>Plan accepted for this study. Fix and marker work scheduled before verification.</td></tr>
-    <tr><td>MR-TQ-004</td><td>Requirements-based verification, one or more cases per TOR, executed on the qualified environment.</td><td>All eleven TORs PASS at commit <code>907c8a9</code>. Three commits closed the gaps. 194 tests, 0 failures.</td></tr>
+    <tr><td>MR-TQ-004</td><td>Requirements-based verification, one or more cases per TOR, executed on the qualified environment; plus (Rev 2026-08-30) a cold independent re-execution and adversarial review.</td><td>All eleven TORs PASS at commit <code>907c8a9</code>. Three commits closed the gaps. 194 tests at the reviewed commit, 195 after the review's follow-up. Review verdict: holds with minor caveats; three of five closed, three accepted as source-backed.</td></tr>
     <tr><td>MR-TQ-005</td><td>This summary and the verdict.</td><td>&mdash;</td></tr>
   </table></div>
 
@@ -99,7 +99,7 @@ td.center{text-align:center;}
     <tr><td>not met</td><td>TOR-9 &mdash; unreadable / malformed / unsupported baseline handled explicitly, no crash</td><td><code>78d5971</code></td><td class="center"><span class="tag pass">met</span></td></tr>
     <tr><td>partial</td><td>TOR-8 &mdash; a missing baseline never reads as "no drift"; machine-readable marker</td><td><code>a054e4a</code></td><td class="center"><span class="tag pass">met</span></td></tr>
     <tr><td>partial</td><td>TOR-11 &mdash; injection check carries a visible "not a qualified result" marker</td><td><code>a054e4a</code></td><td class="center"><span class="tag pass">met</span></td></tr>
-    <tr><td>met</td><td>TOR-1&ndash;7, TOR-10 &mdash; surface capture, canonical match, add/remove/modify classification, no cosmetic suppression, determinism, transparency</td><td>re-verified; TOR-4/5 gap cases added in <code>907c8a9</code></td><td class="center"><span class="tag pass">met</span></td></tr>
+    <tr><td>met</td><td>TOR-1&ndash;7, TOR-10 &mdash; surface capture, canonical match, add/remove/modify classification, no cosmetic suppression, determinism, transparency</td><td>re-verified; TOR-4/5 gap cases added in <code>907c8a9</code>; TOR-10 byte-identity and TOR-3/5 exact-count assertions added at Rev 2026-08-30 after the independent review (MR-TQ-004 &sect;7)</td><td class="center"><span class="tag pass">met</span></td></tr>
   </table></div>
   <p>No open defect stands against any TOR.</p>
 
@@ -118,7 +118,7 @@ td.center{text-align:center;}
   </table></div>
   <div class="callout gap">
     <div class="lead">The one condition this study cannot close itself</div>
-    The verification in MR-TQ-004 was performed by the tool's author. DO-330 expects the tool's qualification verification to be independent of its development (MR-TQ-003 &sect;7). Before this material is used on a real program, a reviewer independent of mcp-ratchet's development must repeat or confirm the MR-TQ-004 verification against commit <code>907c8a9</code>. Until that is done, the verdict above is a candidate, not a completed qualification.
+    The verification in MR-TQ-004 &sect;3 was performed by the tool's author. A <b>cold re-execution and adversarial review</b> by a reviewer with no prior involvement in the code or documents was done at Rev 2026-08-30 (MR-TQ-004 &sect;7): environment, full suite, counts, and commits all re-confirmed at <code>907c8a9</code>; every TOR found to have a genuine passing case; no dishonesty. Its verdict was "holds with minor caveats" &mdash; five points where the prose outran the cited test. Three were closed with new or tightened assertions; three remain <b>accepted as source-backed, not test-backed</b> (MR-TQ-004 &sect;7): TOR-1's eight-field canonical list, TOR-11's injection/drift code separation, and the SDK 2.0.0&rarr;2.1.1 <code>Tool</code>-field re-check. This substantively addresses "independent of development." It does <b>not</b> replace program-level QA sign-off by a named reviewer, which any real use still requires. On that basis the verdict above stands as a <b>defensible candidate</b>.
   </div>
 
   <h2><span class="sec">&sect;5</span> Residual limitations carried out of the study</h2>
@@ -137,11 +137,11 @@ td.center{text-align:center;}
   </table></div>
 
   <h2><span class="sec">&sect;7</span> Closing statement</h2>
-  <p>This study does not show that AI tools can be safely qualified for DO-178C credit. It shows that one specific, deterministic guardrail around such a tool &mdash; a fingerprint-and-compare check on the tool's advertised interface &mdash; can itself be qualified at the lowest tool qualification level, cheaply, against falsifiable requirements, with an honest account of the three source defects that had to be fixed to get there. The guardrail's value is bounded: it holds the edges of an existing qualification stable; it does not establish one. The single item left open is independent verification of the results in MR-TQ-004.</p>
+  <p>This study does not show that AI tools can be safely qualified for DO-178C credit. It shows that one specific, deterministic guardrail around such a tool &mdash; a fingerprint-and-compare check on the tool's advertised interface &mdash; can itself be qualified at the lowest tool qualification level, cheaply, against falsifiable requirements, with an honest account of the three source defects that had to be fixed to get there and a cold adversarial re-check of the verification that closed the gaps it could. The guardrail's value is bounded: it holds the edges of an existing qualification stable; it does not establish one. What a real program still needs to add: a named human QA reviewer's sign-off, and coverage for the three source-backed-only claims noted in MR-TQ-004 &sect;7.</p>
 
 </div>
 
 <div class="doc-footer">
   <span>MR-TQ-005 &middot; mcp-ratchet DO-330 Tool Qualification Study</span>
-  <span>Rev 2026-08-29 &middot; Read Order 5 of 5</span>
+  <span>Rev 2026-08-30 &middot; Read Order 5 of 5</span>
 </div>

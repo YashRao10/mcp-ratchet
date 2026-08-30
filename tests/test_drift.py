@@ -102,6 +102,8 @@ def delete_all_notes() -> str:
     assert added[0].tool_name == "delete_all_notes"
     # Not a field-level change (a whole new tool) — the flag never applies.
     assert added[0].whitespace_only_change is False
+    # Nothing else drifted — the one added tool is the ONLY event of any kind.
+    assert len(events) == 1
 
 
 async def test_whitespace_only_edit_still_drifts_but_is_labeled_as_such(toy_server_copy):

@@ -81,10 +81,11 @@ def test_multiple_fields_changing_at_once_each_reported():
     baseline = _baseline([before])
     _, events = diff_against_baseline([after], baseline)
 
-    kinds = {e.drift_type for e in events}
-    assert DRIFT_DESCRIPTION_CHANGED in kinds
-    assert DRIFT_SCHEMA_CHANGED in kinds
-    assert DRIFT_ANNOTATIONS_CHANGED in kinds
+    kinds = sorted(e.drift_type for e in events)
+    # Exactly one event per changed field — no more, no fewer.
+    assert kinds == sorted([
+        DRIFT_DESCRIPTION_CHANGED, DRIFT_SCHEMA_CHANGED, DRIFT_ANNOTATIONS_CHANGED
+    ])
     # Every event names the tool and carries both baseline and current hash.
     for e in events:
         assert e.tool_name == "alpha"
