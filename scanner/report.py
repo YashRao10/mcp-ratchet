@@ -80,6 +80,13 @@ class ScanResult:
                 "secret_count": len(self.secret_findings),
                 "dependency_finding_count": len(self.dependency_findings),
             },
+            "injection_check": {
+                # TOR-11: the prompt-injection check is an LLM judgment call,
+                # outside the DO-330-qualified drift-detection function. Its
+                # output must never be represented as a qualified result.
+                "qualification_status": "not_qualified",
+                "note": "Advisory only. Carries no compliance credit; does not affect drift detection.",
+            },
         }
 
 
@@ -148,13 +155,17 @@ table{{width:100%;border-collapse:collapse;margin:12px 0 28px;font-size:13px;}}
 th,td{{border:1px solid #2a3234;padding:6px 10px;text-align:left;vertical-align:top;}}
 th{{background:#1d2325;}}
 code{{font-family:monospace;color:#5cc2b8;}}
+.not-qualified{{font-family:monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#c9974a;border:1px solid rgba(201,151,74,0.5);border-radius:4px;padding:2px 7px;margin-left:8px;}}
+.qual-note{{font-size:12px;color:#9aa5a3;margin:0 0 10px;max-width:640px;}}
 </style></head><body>
 <h1>mcp-ratchet scan report</h1>
 <p><b>Target:</b> <code>{escape(d['target_slug'])}</code> — <code>{escape(d['target_command'])}</code><br>
 <b>Generated:</b> {escape(d['generated_at'])}<br>
 <b>Status:</b> <span class="status {status_class}">{status}</span></p>
 
-<h2>Prompt-injection check (real Claude API verdict per tool)</h2>
+<h2>Prompt-injection check (real Claude API verdict per tool) <span class="not-qualified">not a qualified result</span></h2>
+<p class="qual-note">This check is an LLM judgment call, outside the DO-330-qualified drift-detection
+function. It is advisory only and carries no compliance credit.</p>
 <table><tr><th>Tool</th><th>Verdict</th><th>Confidence</th><th>Reasoning</th></tr>
 {injection_rows or '<tr><td colspan="4">No tools scanned.</td></tr>'}
 </table>

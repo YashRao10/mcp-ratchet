@@ -53,7 +53,9 @@ h1{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.01
 .pill-clean{background:rgba(74,157,154,0.12); color:var(--steel); border-color:rgba(74,157,154,0.35);}
 .pill-flagged{background:rgba(217,119,87,0.12); color:var(--warn); border-color:rgba(217,119,87,0.35);}
 .pill-drift{background:rgba(209,73,91,0.14); color:var(--critical); border-color:rgba(209,73,91,0.4);}
+.pill-noeval{background:rgba(201,151,74,0.14); color:var(--brass); border-color:rgba(201,151,74,0.45);}
 .pill-unknown{background:var(--surface-2); color:var(--ink-faint); border-color:var(--border-strong);}
+.noeval-banner{font-family:var(--mono); font-size:11.5px; line-height:1.5; color:var(--brass); background:rgba(201,151,74,0.09); border:1px solid rgba(201,151,74,0.4); border-radius:6px; padding:9px 11px; margin:0 0 14px;}
 
 .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 16px; padding:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
 .stat-row-5{grid-template-columns:repeat(5,1fr);}
@@ -97,7 +99,7 @@ footer a:hover{text-decoration:underline;}
       <h1>mcp-ratchet</h1>
       <span class="mark">v1</span>
     </div>
-    <div class="meta">generated 2026-08-26 23:00 UTC</div>
+    <div class="meta">generated 2026-08-30 05:31 UTC</div>
   </div>
   <p class="tagline">A security scanner and runtime drift monitor for MCP servers &mdash; every install-time scanner checks once; this one keeps watching.</p>
 
@@ -106,7 +108,7 @@ footer a:hover{text-decoration:underline;}
     <div class="stat clean"><div class="n">4</div><div class="l">Clean</div></div>
     <div class="stat flagged"><div class="n">1</div><div class="l">Findings present</div></div>
     <div class="stat drift"><div class="n">0</div><div class="l">Live drift detected</div></div>
-    <div class="stat"><div class="n">25</div><div class="l">Calls audited</div></div>
+    <div class="stat"><div class="n">32</div><div class="l">Calls audited</div></div>
   </div>
 
   <div class="grid">
@@ -122,13 +124,15 @@ footer a:hover{text-decoration:underline;}
 
       <dl class="stat-row stat-row-5">
         <div><dt>tools</dt><dd>5</dd></div>
-        <div><dt>calls</dt><dd>25</dd></div>
-        <div><dt>sessions</dt><dd>27</dd></div>
+        <div><dt>calls</dt><dd>32</dd></div>
+        <div><dt>sessions</dt><dd>34</dd></div>
         <div><dt>drift</dt><dd class="">0</dd></div>
         <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+      
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call · NOT A QUALIFIED RESULT</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-26T22:52:56.749816+00:00</div>
 
@@ -152,7 +156,9 @@ footer a:hover{text-decoration:underline;}
         <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">1</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+      
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call · NOT A QUALIFIED RESULT</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">1</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-26T22:52:59.516066+00:00</div>
 
@@ -176,7 +182,9 @@ footer a:hover{text-decoration:underline;}
         <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">14</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+      
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call · NOT A QUALIFIED RESULT</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">14</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-26T22:53:39.193229+00:00</div>
 
@@ -200,7 +208,9 @@ footer a:hover{text-decoration:underline;}
         <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">12</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+      
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call · NOT A QUALIFIED RESULT</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-flag"><span class="chip-n">12</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>perm. mismatch</span><span class="chip chip-ok"><span class="chip-n">0</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-26T22:52:58.146640+00:00</div>
 
@@ -224,7 +234,9 @@ footer a:hover{text-decoration:underline;}
         <div><dt>blocked</dt><dd class="">0</dd></div>
       </dl>
 
-      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-flag"><span class="chip-n">1</span>perm. mismatch</span><span class="chip chip-flag"><span class="chip-n">1</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
+      
+
+      <div class="tier tier-judgment"><div class="tier-label">Judgment · real Claude API call · NOT A QUALIFIED RESULT</div><div class="chip-row"><span class="chip chip-ok"><span class="chip-n">0</span>suspicious</span><span class="chip chip-ok"><span class="chip-n">0</span>needs review</span></div></div><div class="tier tier-deterministic"><div class="tier-label">Deterministic · scripted rules</div><div class="chip-row"><span class="chip chip-flag"><span class="chip-n">1</span>perm. mismatch</span><span class="chip chip-flag"><span class="chip-n">1</span>secrets</span><span class="chip chip-ok"><span class="chip-n">0</span>dep. CVEs</span></div></div>
 
       <div class="card-foot">last scanned 2026-08-21T07:35:38.752506+00:00</div>
 
@@ -234,7 +246,7 @@ footer a:hover{text-decoration:underline;}
   </div>
 
   <footer>
-    <span>schema: mcp-ratchet-audit-log/1 &middot; 0 total drift events logged &middot; 0 calls blocked</span>
+    <span>schema: mcp-ratchet-audit-log/1 &middot; 0 total drift events logged &middot; 0 calls blocked &middot; 0 target(s) with drift not evaluated</span>
     <span><a href="https://github.com/YashRao10/mcp-ratchet">github.com/YashRao10/mcp-ratchet</a></span>
   </footer>
 

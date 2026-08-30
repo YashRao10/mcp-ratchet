@@ -54,6 +54,24 @@ def _finding_list(findings: list[dict], empty_label: str) -> str:
     return f'<ul class="finding-list">{"".join(items)}</ul>'
 
 
+def _noeval_note(summary: TargetSummary) -> str:
+    if summary.drift_status == "baseline_error":
+        reason = "the baseline file is present but unreadable, unparseable, or an unsupported version"
+    elif summary.drift_status == "no_baseline":
+        reason = "no baseline file exists for this target"
+    else:
+        return ""
+    issues = "".join(
+        f'<li class="mono">{escape(str(i.get("timestamp", "")))} &mdash; {escape(str(i.get("error_message", "")))}</li>'
+        for i in summary.recent_baseline_issues
+    )
+    return (
+        '<div class="noeval-banner">DRIFT NOT EVALUATED in the latest session &mdash; '
+        f'{escape(reason)}. Absence of drift events below is NOT a &ldquo;no drift&rdquo; result.'
+        f'{f"<ul>{issues}</ul>" if issues else ""}</div>'
+    )
+
+
 def _drift_rows(events: list[dict]) -> str:
     if not events:
         return '<p class="empty-cell">No drift events logged for this target.</p>'
@@ -130,6 +148,10 @@ td{{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top;
 .finding-tool{{color:var(--warn); font-weight:600;}}
 .finding-field{{color:var(--ink-soft);}}
 .finding-field b{{color:var(--ink-faint); font-weight:500;}}
+.not-qualified{{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--brass); border:1px solid rgba(201,151,74,0.5); border-radius:4px; padding:2px 6px; margin-left:8px; vertical-align:middle;}}
+.qual-note{{font-size:12px; color:var(--ink-faint); margin:0 0 14px; max-width:620px;}}
+.noeval-banner{{font-family:var(--mono); font-size:12px; line-height:1.5; color:var(--brass); background:rgba(201,151,74,0.09); border:1px solid rgba(201,151,74,0.4); border-radius:6px; padding:11px 13px; margin:0 0 28px;}}
+.noeval-banner ul{{margin:8px 0 0; padding-left:18px;}}
 footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--ink-faint);}}
 </style>
 </head><body>
@@ -149,7 +171,10 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
   </div>
   <div class="meta-row">
     <span><b>whole-server hash:</b> <span class="mono hash">{whole_hash}</span></span>
+    <span><b>drift evaluation:</b> {escape(summary.drift_evaluation)} ({escape(summary.drift_status)})</span>
   </div>
+
+  {_noeval_note(summary)}
 
   <h2>Tool inventory</h2>
   <table>
@@ -157,7 +182,9 @@ footer{{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); f
     <tbody>{_tool_rows(scan)}</tbody>
   </table>
 
-  <h2>Findings &middot; prompt-injection judgment</h2>
+  <h2>Findings &middot; prompt-injection judgment <span class="not-qualified">not a qualified result</span></h2>
+  <p class="qual-note">The prompt-injection check is an LLM judgment call, outside the DO-330-qualified
+  drift-detection function. It is advisory only and carries no compliance credit.</p>
   {_finding_list(
       [v for v in (scan.get("injection_verdicts") or []) if v.get("needs_review") or v.get("suspicious")],
       "No tools flagged.",

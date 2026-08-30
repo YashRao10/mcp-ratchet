@@ -37,6 +37,10 @@ td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; 
 .finding-tool{color:var(--warn); font-weight:600;}
 .finding-field{color:var(--ink-soft);}
 .finding-field b{color:var(--ink-faint); font-weight:500;}
+.not-qualified{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--brass); border:1px solid rgba(201,151,74,0.5); border-radius:4px; padding:2px 6px; margin-left:8px; vertical-align:middle;}
+.qual-note{font-size:12px; color:var(--ink-faint); margin:0 0 14px; max-width:620px;}
+.noeval-banner{font-family:var(--mono); font-size:12px; line-height:1.5; color:var(--brass); background:rgba(201,151,74,0.09); border:1px solid rgba(201,151,74,0.4); border-radius:6px; padding:11px 13px; margin:0 0 28px;}
+.noeval-banner ul{margin:8px 0 0; padding-left:18px;}
 footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
 </style>
 </head><body>
@@ -49,14 +53,17 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
   <div class="meta-row">
     <span><b>last scanned:</b> 2026-08-26T22:52:56.749816+00:00</span>
     <span><b>tool count:</b> 5</span>
-    <span><b>calls audited:</b> 25</span>
-    <span><b>sessions:</b> 27</span>
+    <span><b>calls audited:</b> 32</span>
+    <span><b>sessions:</b> 34</span>
     <span><b>drift events:</b> 0</span>
     <span><b>blocked calls:</b> 0</span>
   </div>
   <div class="meta-row">
     <span><b>whole-server hash:</b> <span class="mono hash">94102b730a693b7ebd5f93c8754b0fc816a3b093661481de83cd6fff14dae61f</span></span>
+    <span><b>drift evaluation:</b> performed (evaluated)</span>
   </div>
+
+  
 
   <h2>Tool inventory</h2>
   <table>
@@ -92,7 +99,9 @@ circular). Check r_squared before trusting the split: a low value means
 the three factors barely explain this name&#x27;s moves.</td><td class="mono hash">690fa8134c2b</td></tr></tbody>
   </table>
 
-  <h2>Findings &middot; prompt-injection judgment</h2>
+  <h2>Findings &middot; prompt-injection judgment <span class="not-qualified">not a qualified result</span></h2>
+  <p class="qual-note">The prompt-injection check is an LLM judgment call, outside the DO-330-qualified
+  drift-detection function. It is advisory only and carries no compliance credit.</p>
   <p class="empty-cell">No tools flagged.</p>
 
   <h2>Findings &middot; permission mismatch</h2>
@@ -116,6 +125,6 @@ the three factors barely explain this name&#x27;s moves.</td><td class="mono has
     <tbody><p class="empty-cell">No calls blocked for this target (either --block-on-drift was never used, or nothing drifted while it was on).</p></tbody>
   </table>
 
-  <footer>generated 2026-08-26 23:00 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
+  <footer>generated 2026-08-30 05:31 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
 </div>
 </body></html>

@@ -1,0 +1,66 @@
+{
+  "schema_version": "mcp-ratchet-drift-summary/1",
+  "generated_at": "2026-08-30T05:31:06.495830+00:00",
+  "targets": [
+    {
+      "slug": "personal-financial-analysis",
+      "drift_evaluation": "performed",
+      "drift_status": "evaluated",
+      "drift_event_count": 0,
+      "blocked_call_count": 0,
+      "no_baseline_session_count": 0,
+      "baseline_error_session_count": 0,
+      "call_count": 32,
+      "session_count": 34,
+      "scan_is_clean": true
+    },
+    {
+      "slug": "reference-fetch",
+      "drift_evaluation": "not_performed",
+      "drift_status": "no_proxy_activity",
+      "drift_event_count": 0,
+      "blocked_call_count": 0,
+      "no_baseline_session_count": 0,
+      "baseline_error_session_count": 0,
+      "call_count": 0,
+      "session_count": 0,
+      "scan_is_clean": true
+    },
+    {
+      "slug": "reference-filesystem",
+      "drift_evaluation": "not_performed",
+      "drift_status": "no_proxy_activity",
+      "drift_event_count": 0,
+      "blocked_call_count": 0,
+      "no_baseline_session_count": 0,
+      "baseline_error_session_count": 0,
+      "call_count": 0,
+      "session_count": 0,
+      "scan_is_clean": true
+    },
+    {
+      "slug": "reference-git",
+      "drift_evaluation": "not_performed",
+      "drift_status": "no_proxy_activity",
+      "drift_event_count": 0,
+      "blocked_call_count": 0,
+      "no_baseline_session_count": 0,
+      "baseline_error_session_count": 0,
+      "call_count": 0,
+      "session_count": 0,
+      "scan_is_clean": true
+    },
+    {
+      "slug": "toy",
+      "drift_evaluation": "not_performed",
+      "drift_status": "no_proxy_activity",
+      "drift_event_count": 0,
+      "blocked_call_count": 0,
+      "no_baseline_session_count": 0,
+      "baseline_error_session_count": 0,
+      "call_count": 0,
+      "session_count": 0,
+      "scan_is_clean": false
+    }
+  ]
+}

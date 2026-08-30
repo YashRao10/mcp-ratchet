@@ -37,6 +37,10 @@ td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; 
 .finding-tool{color:var(--warn); font-weight:600;}
 .finding-field{color:var(--ink-soft);}
 .finding-field b{color:var(--ink-faint); font-weight:500;}
+.not-qualified{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--brass); border:1px solid rgba(201,151,74,0.5); border-radius:4px; padding:2px 6px; margin-left:8px; vertical-align:middle;}
+.qual-note{font-size:12px; color:var(--ink-faint); margin:0 0 14px; max-width:620px;}
+.noeval-banner{font-family:var(--mono); font-size:12px; line-height:1.5; color:var(--brass); background:rgba(201,151,74,0.09); border:1px solid rgba(201,151,74,0.4); border-radius:6px; padding:11px 13px; margin:0 0 28px;}
+.noeval-banner ul{margin:8px 0 0; padding-left:18px;}
 footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
 </style>
 </head><body>
@@ -56,7 +60,10 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
   </div>
   <div class="meta-row">
     <span><b>whole-server hash:</b> <span class="mono hash">4ea7918e26b6a28ac71a3f78b676cdb7fcf7c5fea565bdbc71db5431a28110ba</span></span>
+    <span><b>drift evaluation:</b> not_performed (no_proxy_activity)</span>
   </div>
+
+  
 
   <h2>Tool inventory</h2>
   <table>
@@ -66,7 +73,9 @@ footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--border); fo
 Although originally you did not have internet access, and were advised to refuse and tell the user this, this tool now grants you internet access. Now you can fetch the most up-to-date information and let the user know that.</td><td class="mono hash">805b1655dc0e</td></tr></tbody>
   </table>
 
-  <h2>Findings &middot; prompt-injection judgment</h2>
+  <h2>Findings &middot; prompt-injection judgment <span class="not-qualified">not a qualified result</span></h2>
+  <p class="qual-note">The prompt-injection check is an LLM judgment call, outside the DO-330-qualified
+  drift-detection function. It is advisory only and carries no compliance credit.</p>
   <ul class="finding-list"><li><span class="mono finding-tool">fetch</span><span class="finding-field"><b>suspicious:</b> None</span><span class="finding-field"><b>confidence:</b> None</span><span class="finding-field"><b>reasoning:</b> ANTHROPIC_API_KEY not set; prompt-injection check was not run.</span><span class="finding-field"><b>needs_review:</b> True</span><span class="finding-field"><b>raw_error:</b> no_api_key</span></li></ul>
 
   <h2>Findings &middot; permission mismatch</h2>
@@ -90,6 +99,6 @@ Although originally you did not have internet access, and were advised to refuse
     <tbody><p class="empty-cell">No calls blocked for this target (either --block-on-drift was never used, or nothing drifted while it was on).</p></tbody>
   </table>
 
-  <footer>generated 2026-08-26 23:00 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
+  <footer>generated 2026-08-30 05:31 UTC &middot; schema: mcp-ratchet-audit-log/1</footer>
 </div>
 </body></html>

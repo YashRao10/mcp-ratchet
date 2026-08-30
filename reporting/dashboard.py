@@ -9,6 +9,7 @@ module makes no findings of its own.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
@@ -20,13 +21,28 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _status_pill(summary: TargetSummary) -> str:
-    if summary.latest_scan is None:
+    if summary.latest_scan is None and summary.drift_status == "no_proxy_activity":
         return '<span class="pill pill-unknown">no scan yet</span>'
     if summary.has_live_drift:
         return '<span class="pill pill-drift">drift detected</span>'
+    if summary.drift_not_evaluated:
+        return '<span class="pill pill-noeval">drift not evaluated</span>'
     if summary.is_clean:
         return '<span class="pill pill-clean">clean</span>'
     return '<span class="pill pill-flagged">findings present</span>'
+
+
+def _noeval_banner(summary: TargetSummary) -> str:
+    if summary.drift_status == "baseline_error":
+        reason = "the baseline file is present but unreadable, unparseable, or an unsupported version"
+    elif summary.drift_status == "no_baseline":
+        reason = "no baseline file exists for this target"
+    else:
+        return ""
+    return (
+        f'<div class="noeval-banner">DRIFT NOT EVALUATED &mdash; {escape(reason)}. '
+        "This is not a &ldquo;no drift&rdquo; result.</div>"
+    )
 
 
 def _check_chip(label: str, count: int, kind: str) -> str:
@@ -62,7 +78,7 @@ def _target_card(summary: TargetSummary) -> str:
         ]
     )
     tiers = (
-        _tier_group("Judgment · real Claude API call", "judgment", judgment_chips)
+        _tier_group("Judgment · real Claude API call · NOT A QUALIFIED RESULT", "judgment", judgment_chips)
         + _tier_group("Deterministic · scripted rules", "deterministic", deterministic_chips)
     )
 
@@ -115,6 +131,8 @@ def _target_card(summary: TargetSummary) -> str:
         <div><dt>blocked</dt><dd class="{'v-warn' if summary.blocked_call_count else ''}">{summary.blocked_call_count}</dd></div>
       </dl>
 
+      {_noeval_banner(summary)}
+
       {tiers}
 
       <div class="card-foot">last scanned {scanned_at}</div>
@@ -127,8 +145,9 @@ def _target_card(summary: TargetSummary) -> str:
 def render_dashboard(summaries: list[TargetSummary]) -> str:
     total = len(summaries)
     clean = sum(1 for s in summaries if s.is_clean and not s.has_live_drift)
-    flagged = sum(1 for s in summaries if not s.is_clean)
+    flagged = sum(1 for s in summaries if not s.is_clean and not s.drift_not_evaluated)
     drifted = sum(1 for s in summaries if s.has_live_drift)
+    not_evaluated = sum(1 for s in summaries if s.drift_not_evaluated and not s.has_live_drift)
     total_calls = sum(s.call_count for s in summaries)
     total_drift_events = sum(s.drift_event_count for s in summaries)
     total_blocked_calls = sum(s.blocked_call_count for s in summaries)
@@ -195,7 +214,9 @@ h1{{font-family:var(--head); font-weight:700; font-size:44px; letter-spacing:0.0
 .pill-clean{{background:rgba(74,157,154,0.12); color:var(--steel); border-color:rgba(74,157,154,0.35);}}
 .pill-flagged{{background:rgba(217,119,87,0.12); color:var(--warn); border-color:rgba(217,119,87,0.35);}}
 .pill-drift{{background:rgba(209,73,91,0.14); color:var(--critical); border-color:rgba(209,73,91,0.4);}}
+.pill-noeval{{background:rgba(201,151,74,0.14); color:var(--brass); border-color:rgba(201,151,74,0.45);}}
 .pill-unknown{{background:var(--surface-2); color:var(--ink-faint); border-color:var(--border-strong);}}
+.noeval-banner{{font-family:var(--mono); font-size:11.5px; line-height:1.5; color:var(--brass); background:rgba(201,151,74,0.09); border:1px solid rgba(201,151,74,0.4); border-radius:6px; padding:9px 11px; margin:0 0 14px;}}
 
 .stat-row{{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 16px; padding:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}}
 .stat-row-5{{grid-template-columns:repeat(5,1fr);}}
@@ -256,7 +277,7 @@ footer a:hover{{text-decoration:underline;}}
   </div>
 
   <footer>
-    <span>schema: mcp-ratchet-audit-log/1 &middot; {total_drift_events} total drift events logged &middot; {total_blocked_calls} calls blocked</span>
+    <span>schema: mcp-ratchet-audit-log/1 &middot; {total_drift_events} total drift events logged &middot; {total_blocked_calls} calls blocked &middot; {not_evaluated} target(s) with drift not evaluated</span>
     <span><a href="https://github.com/YashRao10/mcp-ratchet">github.com/YashRao10/mcp-ratchet</a></span>
   </footer>
 
@@ -274,6 +295,18 @@ def build_and_write(reports_dir: Path | None = None, logs_dir: Path | None = Non
     html = render_dashboard(summaries)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html, encoding="utf-8")
+
+    # Machine-readable companion (TOR-8): a reader parsing this file must be
+    # able to tell "drift was checked and found nothing" from "drift was
+    # never checked" — drift_evaluation is set explicitly, never omitted.
+    drift_summary = {
+        "schema_version": "mcp-ratchet-drift-summary/1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "targets": [s.to_dict() for s in summaries],
+    }
+    (out_path.parent / "drift-summary.json").write_text(
+        json.dumps(drift_summary, indent=2), encoding="utf-8"
+    )
     # Per-target drill-down pages live alongside dashboard.html so the
     # dashboard's relative links ("target-<slug>.html") resolve the same
     # way locally and once GitHub Pages serves reports/ as _site/.
