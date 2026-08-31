@@ -1,5 +1,7 @@
 # mcp-ratchet
 
+[![Tests](https://github.com/YashRao10/mcp-ratchet/actions/workflows/ci.yml/badge.svg)](https://github.com/YashRao10/mcp-ratchet/actions/workflows/ci.yml)
+
 A security scanner and runtime drift monitor for MCP (Model Context
 Protocol) servers.
 
