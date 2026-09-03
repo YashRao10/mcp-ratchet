@@ -39,7 +39,9 @@ anything in the AI toolchain under DO-330.
 | 4 | MR-TQ-004 | Tool Verification Cases & Results | done (Rev 2026-08-30) |
 | 5 | MR-TQ-005 | Tool Accomplishment Summary & Verdict | done (Rev 2026-08-30) |
 
-Editable sources live in `docs-source/*.html`; rendered PDFs in `docs/`.
+Editable sources live in `docs-source/*.html`; rendered PDFs in `docs/`. A
+standalone, citable copy of this study is published at
+[`YashRao10/mcp-ratchet-do330`](https://github.com/YashRao10/mcp-ratchet-do330).
 
 **Status:** the five-document set is complete. Verdict (MR-TQ-005 §4): the
 drift-detection function at mcp-ratchet commit `907c8a9` meets TOR-1..11 and is
